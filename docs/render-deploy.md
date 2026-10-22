@@ -1,6 +1,6 @@
 # Deploy to Render — Payment · Deploy · Domain, step by step
 
-Goal: run this furniture site publicly on Render, bind `sagebrushfurniture.com`, so phones and QR scans can open it.
+Goal: run this furniture site publicly on Render, bind `crazyhotdealsslc.com`, so phones and QR scans can open it.
 The code is Render-ready: `render.yaml`, `/healthz` health check, data written to a persistent disk, and seed data auto-loaded on first boot.
 
 ---
@@ -53,25 +53,25 @@ The code lives locally in the `furniture-site/` folder and needs to be pushed to
 
 ---
 
-## 3. Bind the domain sagebrushfurniture.com
+## 3. Bind the domain crazyhotdealsslc.com
 
 ### 3.1 Buy the domain first
-- Register `sagebrushfurniture.com` at Namecheap / Cloudflare / Google Domains (~$12/year).
+- Register `crazyhotdealsslc.com` at Namecheap / Cloudflare / Google Domains (~$12/year).
 
 ### 3.2 Add the custom domain in Render
 1. Render → your service → **Settings → Custom Domains → Add Custom Domain**.
-2. Enter `sagebrushfurniture.com` (and `www.sagebrushfurniture.com`).
+2. Enter `crazyhotdealsslc.com` (and `www.crazyhotdealsslc.com`).
 3. Render shows the **DNS records** to add (usually an A record pointing at Render's IP, or a CNAME pointing at `xxx.onrender.com`) — enter them exactly as shown.
 
 ### 3.3 Add DNS at the registrar
 - Log in where you bought the domain → DNS settings → add the records Render gave you → save.
-- Propagation takes minutes to a few hours. Once live, Render **issues HTTPS automatically** and `https://sagebrushfurniture.com` opens.
+- Propagation takes minutes to a few hours. Once live, Render **issues HTTPS automatically** and `https://crazyhotdealsslc.com` opens.
 
 ### 3.4 Confirm the site address (QR codes / share links use it)
-- Go to `/admin → Site details` and confirm **Public website address = `https://sagebrushfurniture.com`** (the seed already defaults to it).
+- Go to `/admin → Site details` and confirm **Public website address = `https://crazyhotdealsslc.com`** (the seed already defaults to it).
 - The card QR code and all item share links are based on it — **change it in this one place and the whole site follows**, QR codes regenerate automatically.
 
-> ⚠️ Timing note: if you **deploy first while the domain isn't live yet**, the QR code points at `sagebrushfurniture.com` and won't open when scanned. Two options: ① buy the domain and finish DNS before handing out cards; or ② temporarily set "Public website address" to `https://<service-name>.onrender.com` so the QR works, then switch back once the domain is live.
+> ⚠️ Timing note: if you **deploy first while the domain isn't live yet**, the QR code points at `crazyhotdealsslc.com` and won't open when scanned. Two options: ① buy the domain and finish DNS before handing out cards; or ② temporarily set "Public website address" to `https://<service-name>.onrender.com` so the QR works, then switch back once the domain is live.
 
 ---
 

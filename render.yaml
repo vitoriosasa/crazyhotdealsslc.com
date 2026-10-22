@@ -6,7 +6,7 @@
 # would wipe products, site settings and images. So we use starter + a 1GB disk.
 services:
   - type: web
-    name: sagebrush-furniture
+    name: crazy-hot-deals-slc
     runtime: node
     plan: starter
     buildCommand: npm install

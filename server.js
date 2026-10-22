@@ -37,17 +37,17 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8',
 }
 
-// Defaults for the Sagebrush Furniture brand (sage-green + warm sand palette),
+// Defaults for the Crazy Hot Deals SLC brand (copper + warm sand palette),
 // Sectional Couches / Bed Frames / Home Furniture, Salt Lake City area.
 const DEFAULT_SITE = {
-  brand: 'Sagebrush Furniture',
+  brand: 'Crazy Hot Deals SLC',
   tagline: 'Sectional Couches · Bed Frames · Home Furniture',
   city: 'Salt Lake City area, UT',
   facebookUrl: '',
   messengerUrl: '',
   phone: '',
   email: '',
-  publicUrl: 'https://sagebrushfurniture.com',
+  publicUrl: 'https://crazyhotdealsslc.com',
   pickupNote:
     'Local pickup is our primary option. Local delivery may be available for an additional fee. Please message us with your ZIP code and any stairs or access details for a delivery quote. Pickup and delivery must be confirmed in advance.',
   address: '',
@@ -746,7 +746,7 @@ async function main() {
   if (!fs.existsSync(PRODUCTS_FILE)) await writeJson(PRODUCTS_FILE, [])
   if (!fs.existsSync(LOG_FILE)) await writeJson(LOG_FILE, [])
   server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Sagebrush Furniture showroom running on http://localhost:${PORT}`)
+    console.log(`Crazy Hot Deals SLC showroom running on http://localhost:${PORT}`)
     console.log(`Admin panel: http://localhost:${PORT}/admin`)
   })
 }

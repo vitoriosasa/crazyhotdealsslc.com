@@ -1,8 +1,8 @@
-# Sagebrush Furniture — Page Structure · Admin Plan · Costs
+# Crazy Hot Deals SLC — Page Structure · Admin Plan · Costs
 
 First-version scope: **showcase + route to Messenger**. No cart, no online payment, no automatic shipping, no buyer accounts.
 
-Brand from the printed card: Sagebrush Furniture / sagebrushfurniture.com / Salt Lake City area.
+Brand from the printed card: Crazy Hot Deals SLC / crazyhotdealsslc.com / Salt Lake City area.
 Warehouse: 46 Orange Street, Salt Lake City, UT 84116 · Phone 916-716-1212 · Pickup gate: the four white roll-up doors.
 
 ---
@@ -13,7 +13,7 @@ Warehouse: 46 Orange Street, Salt Lake City, UT 84116 · Phone 916-716-1212 · P
 |---|---|---|---|
 | Catalog home | `/` | Brand, one-line positioning, trust strip, **search**, category filter, **price sort**, in-stock grid (cover / title / price / status badge / **quantity** / **New badge** / item code), pickup note | Done |
 | Item page | `/p/<id>` | Multi-image + **click-to-zoom lightbox**, price, dimensions, color, condition, **what's included**, **what's NOT included**, **quantity in stock**, three contact buttons, mobile sticky action bar | Done |
-| Digital card | `/card` | Matches the printed card layout (mark / SAGEBRUSH / FURNITURE / categories / in-stock count / **QR panel** / three selling points / **4.9 rating** / phone / pickup address / pickup gate), printable | Done |
+| Digital card | `/card` | Matches the printed card layout (mark / CRAZY HOT DEALS / SLC / categories / in-stock count / **QR panel** / three selling points / phone / pickup address / pickup gate), printable | Done |
 | **Listing text** | `/listing/<id>` | One-click Marketplace title / price / description, **per-photo download**, missing-field hints, link backfill after posting | Done (this round) |
 | Admin | `/admin` | Password login → stats block → **take-down reminders** → item list (**stock −/+**, status, hide, edit), **stock log**, edit form (included/not-included parts, Marketplace link), **backup export/restore**, site info, change password | Done |
 
@@ -62,7 +62,7 @@ Navigation logic: home → item page → Messenger; card → home → item page.
 The `/card` QR code is generated live by the server, pointing at **"Public website address" from site settings + `/card`**.
 So once the domain is decided, change it in that one place — card page, share links, and sitemap all follow; no need to reprint the card image.
 
-> The printed card's QR code is printed separately and points at `https://sagebrushfurniture.com`.
+> The printed card's QR code is printed separately and points at `https://crazyhotdealsslc.com`.
 > The old digital card overlaid the domain text on the QR code, which measurably hurt scan reliability — the new version moved the URL below the code.
 
 ---
@@ -75,7 +75,7 @@ So once the domain is decided, change it in that one place — card page, share 
 | Database | $0 (JSON files) | Same — JSON on the persistent disk |
 | Image storage | $0 (local disk) | Same — `uploads/` on the disk |
 | Admin login | $0 (built-in password) | Same |
-| Domain | Not needed | ~$12/year, you register `sagebrushfurniture.com` |
+| Domain | Not needed | ~$12/year, you register `crazyhotdealsslc.com` |
 | Daily upkeep | ~2 minutes per new item | Same |
 
 Render's free tier is not usable (sleeps without traffic; ephemeral disk wipes data). Details in `docs/render-deploy.md`.
@@ -94,6 +94,6 @@ Render's free tier is not usable (sleeps without traffic; ephemeral disk wipes d
 
 ## 6. Next steps
 
-1. In admin, confirm "Public website address" = `https://sagebrushfurniture.com`.
+1. In admin, confirm "Public website address" = `https://crazyhotdealsslc.com`.
 2. Send real furniture photos + price / dimensions / condition / included & not-included parts → I batch-enter the first 3–5 items for style calibration.
 3. Confirm public launch; after your OK I deploy and hand you links you can send straight to buyers.

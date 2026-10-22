@@ -9,7 +9,7 @@
 
 | # | Decision | Status |
 |---|---|---|
-| 1 | **Brand name** | Sagebrush Furniture (domain `sagebrushfurniture.com`) |
+| 1 | **Brand name** | Crazy Hot Deals SLC (domain `crazyhotdealsslc.com`) |
 | 2 | **Hosting** | ✅ **Decided: Render Starter ($7/month)** |
 | 3 | **Data + image storage** | ✅ **Decided: Render persistent disk (1 GB, $0.25/month)** — no separate cloud DB; simplest for a single-operator site, all data on the disk |
 
@@ -38,7 +38,7 @@
 
 ```
 Buyer browser / share crawler
-      │  https://sagebrushfurniture.com
+      │  https://crazyhotdealsslc.com
       ▼
 [ Host: long-running Node service ]  ── Render Starter
    · static pages + API + server-rendered OG meta

@@ -48,8 +48,8 @@ async function runAll() {
     const html = d.body.innerHTML
 
     ok(d.querySelector('.brand-mark') !== null, 'home: brand mark rendered')
-    ok(d.querySelector('.brand-name').textContent === 'Sagebrush', 'home: brand name = "Sagebrush"')
-    ok(d.querySelector('.brand-sub').textContent === 'Furniture', 'home: brand sub = "Furniture"')
+    ok(d.querySelector('.brand-name').textContent === 'Crazy Hot Deals', 'home: brand name = "Crazy Hot Deals"')
+    ok(d.querySelector('.brand-sub').textContent === 'SLC', 'home: brand sub = "SLC"')
     ok(d.querySelector('#search') !== null, 'home: search box present')
     ok(d.querySelector('#sort') !== null, 'home: sort dropdown present')
     ok(d.querySelectorAll('.chip').length >= 4, 'home: category chips = ' + d.querySelectorAll('.chip').length)
@@ -121,14 +121,14 @@ async function runAll() {
   {
     const dom = await load('/card')
     const d = dom.window.document
-    ok(d.querySelector('.mark') !== null, 'card: sagebrush mark rendered')
-    ok(d.querySelector('#brand').textContent === 'Sagebrush', 'card: brand head = "Sagebrush"')
-    ok(d.querySelector('#brand-sub').textContent === 'Furniture', 'card: brand sub = "Furniture"')
+    ok(d.querySelector('.mark') !== null, 'card: flame mark rendered')
+    ok(d.querySelector('#brand').textContent === 'Crazy Hot Deals', 'card: brand head = "Crazy Hot Deals"')
+    ok(d.querySelector('#brand-sub').textContent === 'SLC', 'card: brand sub = "SLC"')
     ok(/Sectional Couches/.test(d.querySelector('#cats').textContent), 'card: category line from site settings')
     ok(/Home Furniture/.test(d.querySelector('#cats').textContent), 'card: Home Furniture category present')
     const qrSrc = d.querySelector('#qr').getAttribute('src')
     ok(/%2Fcard/.test(qrSrc), 'card: QR points at /card')
-    ok(/sagebrushfurniture\.com/.test(d.querySelector('#qr-url').textContent), 'card: QR URL uses real domain')
+    ok(/crazyhotdealsslc\.com/.test(d.querySelector('#qr-url').textContent), 'card: QR URL uses real domain')
     ok(d.querySelector('#rating') === null, 'card: rating line removed')
     ok(d.querySelectorAll('.card-points li').length === 3, 'card: 3 selling points from printed card')
     ok(!/\d+ pieces? in stock/.test(d.querySelector('#stockline').textContent), 'card: no unit counts shown to buyers')
@@ -150,7 +150,7 @@ async function runAll() {
     ok(/Size: 110in W x 68in D/.test(d.querySelector('#l-desc').value), 'listing: description includes size')
     ok(/NOT included: Ottoman/.test(d.querySelector('#l-desc').value), 'listing: description includes NOT included')
     ok(/Item code SF-1001/.test(d.querySelector('#l-desc').value), 'listing: description includes item code')
-    ok(/sagebrushfurniture\.com\/p\//.test(d.querySelector('#l-desc').value), 'listing: description links to real domain')
+    ok(/crazyhotdealsslc\.com\/p\//.test(d.querySelector('#l-desc').value), 'listing: description links to real domain')
     ok(d.querySelector('#l-title').value.includes('Like new'), 'listing: title includes condition')
     ok(d.querySelector('#l-price').value === '480', 'listing: price prefilled')
 

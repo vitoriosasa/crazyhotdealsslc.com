@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sagebrush Furniture — Digital Card</title>
-<meta name="description" content="Scan to see what Sagebrush Furniture has in stock right now — sectional couches, bed frames and home furniture in the Salt Lake City area.">
-<meta property="og:title" content="Sagebrush Furniture — see what's in stock">
+<title>Crazy Hot Deals SLC — Digital Card</title>
+<meta name="description" content="Scan to see what Crazy Hot Deals SLC has in stock right now — sectional couches, bed frames and home furniture in the Salt Lake City area.">
+<meta property="og:title" content="Crazy Hot Deals SLC — see what's in stock">
 <meta property="og:description" content="Real photos of every piece. Local pickup in the Salt Lake City area; delivery available for an extra fee.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://sagebrushfurniture.com/card">
-<link rel="canonical" href="https://sagebrushfurniture.com/card">
+<meta property="og:url" content="https://crazyhotdealsslc.com/card">
+<link rel="canonical" href="https://crazyhotdealsslc.com/card">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/style.css">
 </head>
@@ -17,8 +17,8 @@
 <main class="cardpage">
   <div class="bizcard" id="bizcard">
     <div id="mark-slot"></div>
-    <h1 class="mono" id="brand">Sagebrush</h1>
-    <div class="sub" id="brand-sub">Furniture</div>
+    <h1 class="mono" id="brand">Crazy Hot Deals</h1>
+    <div class="sub" id="brand-sub">SLC</div>
     <div class="cats" id="cats">Sectional Couches · Bed Frames · Home Furniture</div>
     <div class="stockline" id="stockline"></div>
 
@@ -62,7 +62,7 @@
 <script src="/assets/app.js"></script>
 <script>
 (async function () {
-  document.getElementById('mark-slot').innerHTML = App.SAGE_MARK_LARGE
+  document.getElementById('mark-slot').innerHTML = App.FLAME_MARK_LARGE
 
   // The QR must resolve to the real public domain, not localhost — this card is
   // printed and handed to buyers who will scan it long after this session.
@@ -76,12 +76,12 @@
   const cardUrl = (site.publicUrl || location.origin).replace(/\/+$/, '') + '/card'
   document.getElementById('qr').src = '/api/qr?text=' + encodeURIComponent(cardUrl)
   document.getElementById('qr-url').textContent = cardUrl.replace(/^https?:\/\//, '')
-  document.title = `${site.brand || 'Sagebrush Furniture'} — Digital Card`
+  document.title = `${site.brand || 'Crazy Hot Deals SLC'} — Digital Card`
 
-  const brand = site.brand || 'Sagebrush Furniture'
+  const brand = site.brand || 'Crazy Hot Deals SLC'
   const { head, tail } = App.splitBrand(brand)
   document.getElementById('brand').textContent = head
-  document.getElementById('brand-sub').textContent = tail || 'Furniture'
+  document.getElementById('brand-sub').textContent = tail || 'SLC'
 
   const cats = (site.categories || []).filter(Boolean)
   document.getElementById('cats').textContent = cats.length ? cats.join(' · ') : site.tagline || ''

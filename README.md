@@ -1,9 +1,9 @@
-# Sagebrush Furniture — Furniture Showcase Site
+# Crazy Hot Deals SLC — Furniture Showcase Site
 
 A local furniture showcase site: catalog home page + item pages + digital business card + Marketplace listing-text generator + admin panel.
 Lead generation and sales still happen on Facebook Marketplace / Messenger — the website only showcases and routes buyers to you.
 
-Brand: Sagebrush Furniture · sagebrushfurniture.com · Warehouse pickup in the Salt Lake City area
+Brand: Crazy Hot Deals SLC · crazyhotdealsslc.com · Warehouse pickup in the Salt Lake City area
 
 ## Run
 
@@ -17,7 +17,7 @@ Change port: `PORT=8080 npm start`
 ## First use
 
 1. Open `/admin` and set the admin password (one time only).
-2. Under "Site details", confirm **Public website address** is `https://sagebrushfurniture.com`
+2. Under "Site details", confirm **Public website address** is `https://crazyhotdealsslc.com`
    — the card QR code and all share links use it; a wrong value means scanned links won't open.
 3. Fill in Facebook / Messenger links and categories.
 4. "+ New item" — upload photos, set price / dimensions / condition / **what's included** / **what's NOT included** — saving publishes it.

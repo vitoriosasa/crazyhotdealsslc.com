@@ -33,43 +33,36 @@ const App = (() => {
     sold: { label: 'Sold', cls: 'is-sold' },
   }
 
-  // The sagebrush sprig mark, inlined so it needs no image request.
-  const SAGE_MARK =
+  // The flame mark ("hot deals"), inlined so it needs no image request.
+  // One path, evenodd: outer flame minus an inner teardrop cutout.
+  const FLAME_PATH =
+    'M32 5 C43 19 45 26 45 34 A13 13 0 1 1 19 34 C19 26 21 19 32 5 Z ' +
+    'M32 24 C36.5 30 38.5 33.5 38.5 36.5 A6.5 6.5 0 1 1 25.5 36.5 C25.5 33.5 27.5 30 32 24 Z'
+
+  const FLAME_MARK =
     '<svg class="brand-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">' +
-    '<g fill="currentColor">' +
-    '<path d="M32 56V18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' +
-    '<ellipse cx="32" cy="15" rx="5.2" ry="6.6"/>' +
-    '<ellipse cx="20" cy="23" rx="7" ry="3.3" transform="rotate(-40 20 23)"/>' +
-    '<ellipse cx="44" cy="23" rx="7" ry="3.3" transform="rotate(40 44 23)"/>' +
-    '<ellipse cx="17" cy="34" rx="8" ry="3.7" transform="rotate(-34 17 34)"/>' +
-    '<ellipse cx="47" cy="34" rx="8" ry="3.7" transform="rotate(34 47 34)"/>' +
-    '<ellipse cx="20" cy="45" rx="7" ry="3.5" transform="rotate(-26 20 45)"/>' +
-    '<ellipse cx="44" cy="45" rx="7" ry="3.5" transform="rotate(26 44 45)"/>' +
-    '</g></svg>'
+    `<path fill="currentColor" fill-rule="evenodd" d="${FLAME_PATH}"/>` +
+    '</svg>'
 
-  const SAGE_MARK_LARGE =
+  const FLAME_MARK_LARGE =
     '<svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">' +
-    '<g fill="#b06c3c">' +
-    '<path d="M32 56V18" stroke="#b06c3c" stroke-width="2.4" stroke-linecap="round"/>' +
-    '<ellipse cx="32" cy="15" rx="5.2" ry="6.6"/>' +
-    '<ellipse cx="20" cy="23" rx="7" ry="3.3" transform="rotate(-40 20 23)"/>' +
-    '<ellipse cx="44" cy="23" rx="7" ry="3.3" transform="rotate(40 44 23)"/>' +
-    '<ellipse cx="17" cy="34" rx="8" ry="3.7" transform="rotate(-34 17 34)"/>' +
-    '<ellipse cx="47" cy="34" rx="8" ry="3.7" transform="rotate(34 47 34)"/>' +
-    '<ellipse cx="20" cy="45" rx="7" ry="3.5" transform="rotate(-26 20 45)"/>' +
-    '<ellipse cx="44" cy="45" rx="7" ry="3.5" transform="rotate(26 44 45)"/>' +
-    '</g></svg>'
+    `<path fill="#b06c3c" fill-rule="evenodd" d="${FLAME_PATH}"/>` +
+    '</svg>'
 
-  // Brand lockup split: keep an ampersand tail intact ("Beehive Sofa & Bed"
-  // -> "Beehive Sofa" / "Bed"), otherwise split a two-word name on its first
-  // space ("Sagebrush Furniture" -> "Sagebrush" / "Furniture").
+  // Brand lockup split: keep an ampersand tail intact ("Sofa & Bed Co"
+  // -> "Sofa" / "Bed Co"), keep a trailing short all-caps token (city/state
+  // code) as the sub line ("Crazy Hot Deals SLC" -> "Crazy Hot Deals" /
+  // "SLC"), otherwise split a two-word name on its first space.
   function splitBrand(brand) {
-    const fallback = { head: 'Sagebrush', tail: 'Furniture' }
+    const fallback = { head: 'Crazy Hot Deals', tail: 'SLC' }
     if (!brand) return fallback
     const b = String(brand).trim()
     const m = b.match(/^(.*?)\s*&\s*(.+)$/)
     if (m) return { head: m[1].trim(), tail: m[2].trim() }
     const sp = b.split(/\s+/)
+    if (sp.length >= 2 && /^[A-Z]{2,4}$/.test(sp[sp.length - 1])) {
+      return { head: sp.slice(0, -1).join(' '), tail: sp[sp.length - 1] }
+    }
     if (sp.length >= 2) return { head: sp[0], tail: sp.slice(1).join(' ') }
     return { head: b, tail: '' }
   }
@@ -77,7 +70,7 @@ const App = (() => {
   function brandLockup(site, asClass) {
     const { head, tail } = splitBrand(site.brand)
     return (
-      `<span class="brand-lockup${asClass ? ' ' + asClass : ''}">${SAGE_MARK}` +
+      `<span class="brand-lockup${asClass ? ' ' + asClass : ''}">${FLAME_MARK}` +
       `<span class="brand-text"><span class="brand-name">${esc(head)}</span>` +
       `<span class="brand-sub">${esc(tail)}</span></span></span>`
     )
@@ -255,7 +248,7 @@ const App = (() => {
   }
 
   return {
-    api, money, esc, STATUS, SAGE_MARK, SAGE_MARK_LARGE, brandLockup, splitBrand,
+    api, money, esc, STATUS, FLAME_MARK, FLAME_MARK_LARGE, brandLockup, splitBrand,
     messengerHref, productLink, askText,
     renderHeader, renderFooter, openLightbox, toast, copy,
     listingTitle, listingDescription, missingFields,
