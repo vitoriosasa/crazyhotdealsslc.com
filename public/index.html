@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sagebrush Furniture — Available Furniture in the Salt Lake City Area</title>
+<meta name="description" content="Sectional couches, bed frames and home furniture in stock now. Real photos of every piece, local pickup in the Salt Lake City area, delivery quoted by ZIP code.">
+<meta property="og:title" content="Sagebrush Furniture — available furniture">
+<meta property="og:description" content="Real photos of every piece. Local pickup in the Salt Lake City area; delivery available for an extra fee.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sagebrushfurniture.com/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://sagebrushfurniture.com/">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<main>
+  <section class="wrap hero">
+    <div class="hero-grid">
+      <div>
+        <p class="eyebrow" id="hero-eyebrow">Sectional Couches · Bed Frames · Home Furniture</p>
+        <h1 id="hero-title">Every piece below is in stock right now.</h1>
+        <p class="lead" id="hero-lead">
+          Real photos of the actual furniture — no stock images. Message us to confirm availability,
+          hold an item, and arrange pickup. Delivery can be quoted separately.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#inventory">Browse available furniture</a>
+          <a class="btn btn-ghost" id="hero-fb" href="#" target="_blank" rel="noopener">Contact us on Facebook</a>
+        </div>
+        <div class="trust-strip" id="trust-strip"></div>
+        <div class="hero-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h13l-3-3m3 3-3 3"/><path d="M20 6v12"/></svg>
+          <span><strong>Local pickup is our primary option.</strong> Local delivery may be available for an additional fee — message us with your ZIP code and any stairs or access details for a quote. Pickup and delivery must be confirmed in advance.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="inventory">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="chips" id="chips"></div>
+        <span class="small muted" id="count"></span>
+      </div>
+      <div class="controls">
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="search" type="search" placeholder="Search colour, size, item code…" aria-label="Search furniture" autocomplete="off">
+          <button class="search-clear" id="search-clear" type="button" aria-label="Clear search" hidden>×</button>
+        </div>
+        <select id="sort" aria-label="Sort furniture">
+          <option value="new">Newest first</option>
+          <option value="lo">Price: low to high</option>
+          <option value="hi">Price: high to low</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid" id="grid" aria-live="polite"></div>
+    <noscript><p class="empty">Please enable JavaScript to view the catalogue.</p></noscript>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="/assets/app.js"></script>
+<script>
+(async function () {
+  let site = { brand: '', categories: [] }
+  let products = []
+  let activeCategory = 'all'
+  let query = ''
+  let sortBy = 'new'
+
+  try {
+    const [siteData, listData] = await Promise.all([App.api('/api/site'), App.api('/api/products')])
+    site = siteData
+    products = listData.products || []
+  } catch (err) {
+    document.getElementById('grid').innerHTML =
+      '<div class="empty" style="grid-column:1/-1"><strong style="display:block;font-family:var(--serif);font-size:1.1rem;color:var(--ink);margin-bottom:6px">Catalogue is temporarily unavailable</strong>Please try again shortly, or message us on Facebook.</div>'
+    return
+  }
+
+  document.title = `${site.brand} — Available Furniture`
+  App.renderHeader(site, 'home')
+  App.renderFooter(site)
+
+  document.getElementById('hero-eyebrow').textContent = site.tagline || 'Furniture deals · local pickup'
+
+  const fb = document.getElementById('hero-fb')
+  if (site.facebookUrl) fb.href = site.facebookUrl
+  else fb.style.display = 'none'
+
+  // Trust strip reuses the claims printed on the card, nothing invented.
+  const strip = document.getElementById('trust-strip')
+  const points = []
+  if (site.city) points.push(`<span>Local pickup · ${App.esc(site.city)}</span>`)
+  points.push('<span>Real photos of every piece</span>')
+  points.push('<span>Delivery available for an extra fee</span>')
+  strip.innerHTML = points.join('<span class="dot-sep">·</span>')
+
+  const categories = []
+  for (const c of site.categories || []) if (!categories.includes(c)) categories.push(c)
+  for (const p of products) if (p.category && !categories.includes(p.category)) categories.push(p.category)
+
+  const countOf = (key) => (key === 'all' ? products.length : products.filter((p) => p.category === key).length)
+
+  const chips = document.getElementById('chips')
+  const all = [{ key: 'all', label: 'All items' }].concat(categories.map((c) => ({ key: c, label: c })))
+  chips.innerHTML = all
+    .map((c) => `<button class="chip" data-key="${App.esc(c.key)}" aria-pressed="${c.key === 'all'}">${App.esc(c.label)}<span class="chip-n">${countOf(c.key)}</span></button>`)
+    .join('')
+  chips.addEventListener('click', (e) => {
+    const btn = e.target.closest('.chip')
+    if (!btn) return
+    activeCategory = btn.dataset.key
+    chips.querySelectorAll('.chip').forEach((el) => el.setAttribute('aria-pressed', String(el === btn)))
+    render()
+  })
+
+  const search = document.getElementById('search')
+  const clearBtn = document.getElementById('search-clear')
+  search.addEventListener('input', () => {
+    query = search.value.trim().toLowerCase()
+    clearBtn.hidden = !query
+    render()
+  })
+  clearBtn.addEventListener('click', () => {
+    search.value = ''
+    query = ''
+    clearBtn.hidden = true
+    render()
+    search.focus()
+  })
+  document.getElementById('sort').addEventListener('change', (e) => {
+    sortBy = e.target.value
+    render()
+  })
+
+  function card(p) {
+    const st = App.STATUS[p.status] || App.STATUS.available
+    const cover = p.images && p.images[0] ? p.images[0].thumb || p.images[0].full : ''
+    return `
+      <a class="card ${p.status === 'sold' ? 'is-sold' : ''}" href="/p/${encodeURIComponent(p.id)}">
+        <div class="card-media">
+          ${cover ? `<img src="${App.esc(cover)}" alt="${App.esc(p.title)}" loading="lazy">` : ''}
+          <span class="badge ${st.cls}">${st.label}</span>
+          ${p.isNew ? '<span class="badge badge-new">New</span>' : ''}
+        </div>
+        <div class="card-body">
+          <span class="card-cat">${App.esc(p.category)}</span>
+          <span class="card-title">${App.esc(p.title)}</span>
+          <span class="card-foot">
+            <span class="price">${App.money(p.price)}${p.priceNote ? `<small>${App.esc(p.priceNote)}</small>` : ''}</span>
+            ${p.code ? `<span class="code">#${App.esc(p.code)}</span>` : ''}
+          </span>
+        </div>
+      </a>`
+  }
+
+  function render() {
+    let list = activeCategory === 'all' ? products.slice() : products.filter((p) => p.category === activeCategory)
+
+    if (query) {
+      list = list.filter((p) => {
+        const hay = [p.title, p.code, p.color, p.dimensions, p.category, p.condition, p.description]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        return hay.indexOf(query) >= 0
+      })
+    }
+
+    // Sold items always sink to the bottom regardless of the chosen sort.
+    const isSold = (p) => (p.status === 'sold' ? 1 : 0)
+    list.sort((a, b) => {
+      if (isSold(a) !== isSold(b)) return isSold(a) - isSold(b)
+      if (sortBy === 'lo') return (Number(a.price) || 0) - (Number(b.price) || 0)
+      if (sortBy === 'hi') return (Number(b.price) || 0) - (Number(a.price) || 0)
+      return String(b.createdAt).localeCompare(String(a.createdAt))
+    })
+
+    const grid = document.getElementById('grid')
+    // Buyers never see unit counts — only how many listings are showing.
+    const available = list.filter((p) => p.status !== 'sold').length
+
+    document.getElementById('count').textContent = list.length
+      ? `${available} available right now`
+      : ''
+
+    if (!list.length) {
+      grid.innerHTML = `<div class="empty" style="grid-column:1/-1">
+           <strong style="display:block;font-family:var(--serif);font-size:1.1rem;color:var(--ink);margin-bottom:6px">Nothing matches that yet</strong>
+           ${
+             query
+               ? 'Try a different word, or clear the search to see everything.'
+               : 'New pieces are added regularly — message us on Facebook and we will let you know what is coming in.'
+           }
+         </div>`
+      return
+    }
+
+    grid.innerHTML = list.map(card).join('')
+  }
+
+  render()
+})()
+</script>
+</body>
+</html>

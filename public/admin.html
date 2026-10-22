@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin — Inventory</title>
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+<div id="gate" class="login-wrap hidden">
+  <form class="login-box" id="gate-form">
+    <p class="eyebrow">Admin</p>
+    <h1 id="gate-title">Sign in</h1>
+    <p class="small muted" id="gate-hint" style="margin:6px 0 18px">Manage inventory, photos and site details.</p>
+    <div class="field">
+      <label for="gate-password" id="gate-label">Password</label>
+      <input id="gate-password" type="password" autocomplete="current-password" required>
+    </div>
+    <div class="field hidden" id="gate-confirm-field">
+      <label for="gate-confirm">Confirm password</label>
+      <input id="gate-confirm" type="password" autocomplete="new-password">
+    </div>
+    <button class="btn btn-primary btn-block" id="gate-submit" type="submit">Sign in</button>
+    <p class="small muted" id="gate-error" style="color:#8a2b1f;margin:12px 0 0"></p>
+  </form>
+</div>
+
+<div id="app" class="admin-shell hidden">
+  <div class="admin-top">
+    <div>
+      <p class="eyebrow" style="margin:0">Admin</p>
+      <h1 style="font-size:1.4rem" id="admin-brand">Inventory</h1>
+    </div>
+    <div class="spacer"></div>
+    <a class="btn btn-sm btn-ghost" href="/" target="_blank" rel="noopener">View site</a>
+    <a class="btn btn-sm btn-ghost" href="/card" target="_blank" rel="noopener">Digital card</a>
+    <button class="btn btn-sm btn-light" id="signout" type="button">Sign out</button>
+  </div>
+
+  <section class="panel">
+    <div class="stat-grid" id="stats"></div>
+
+    <div id="delist-panel"></div>
+
+    <div class="panel-head">
+      <h2>Inventory</h2>
+      <div class="row-actions">
+        <span class="small muted" id="inv-count"></span>
+        <button class="btn btn-sm btn-primary" id="new-item" type="button">+ New item</button>
+      </div>
+    </div>
+
+    <div id="editor" class="hidden">
+      <form id="item-form">
+        <input type="hidden" id="f-id">
+        <div class="grid-2">
+          <div class="field">
+            <label for="f-title">Title *</label>
+            <input id="f-title" type="text" required placeholder="Grey L-shaped sectional couch">
+          </div>
+          <div class="field">
+            <label for="f-code">Item code (shown to buyers)</label>
+            <input id="f-code" type="text" placeholder="SF-1042">
+          </div>
+        </div>
+        <div class="grid-3">
+          <div class="field">
+            <label for="f-category">Category</label>
+            <select id="f-category"></select>
+          </div>
+          <div class="field">
+            <label for="f-price">Price (USD) *</label>
+            <input id="f-price" type="number" min="0" step="1" required placeholder="480">
+          </div>
+          <div class="field">
+            <label for="f-quantity">Quantity in stock</label>
+            <input id="f-quantity" type="number" min="0" step="1" placeholder="1">
+          </div>
+        </div>
+        <div class="grid-3">
+          <div class="field">
+            <label for="f-status">Status</label>
+            <select id="f-status">
+              <option value="available">Available</option>
+              <option value="pending">Pending pickup</option>
+              <option value="sold">Sold</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-dimensions">Dimensions</label>
+            <input id="f-dimensions" type="text" placeholder='110" W x 68" D x 34" H'>
+          </div>
+          <div class="field">
+            <label for="f-color">Color</label>
+            <input id="f-color" type="text" placeholder="Charcoal grey">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="f-condition">Condition</label>
+            <input id="f-condition" type="text" placeholder="Like new, minor wear on corner">
+          </div>
+          <div class="field">
+            <label for="f-priceNote">Price note</label>
+            <input id="f-priceNote" type="text" placeholder="OBO / cash only">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="f-includes">What's included</label>
+            <input id="f-includes" type="text" placeholder="3-piece sectional, all cushions">
+          </div>
+          <div class="field">
+            <label for="f-notIncluded">What's NOT included</label>
+            <input id="f-notIncluded" type="text" placeholder="Ottoman and coffee table not included">
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-description">Description</label>
+          <textarea id="f-description" placeholder="Condition details, why selling, pickup location notes…"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Photos — first photo is the cover</label>
+          <div class="uploader">
+            <div class="img-grid" id="img-grid"></div>
+            <div class="dropzone" id="dropzone">
+              Tap to choose photos · or drop files here<br>
+              <span class="small">JPG / PNG / WebP. Resized automatically before upload.</span>
+              <input id="file-input" type="file" accept="image/*" multiple class="hidden">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink-soft)">
+            <input type="checkbox" id="f-hidden" style="width:auto;margin-right:8px;vertical-align:-1px">
+            Hide from the public site (still visible here)
+          </label>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="f-marketplaceUrl">Facebook Marketplace listing link</label>
+            <input id="f-marketplaceUrl" type="url" placeholder="Paste after you post it">
+          </div>
+          <div class="field" style="justify-content:flex-end">
+            <label style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink-soft)">
+              <input type="checkbox" id="f-listedOnMarketplace" style="width:auto;margin-right:8px;vertical-align:-1px">
+              Already posted on Marketplace
+            </label>
+          </div>
+        </div>
+
+        <div class="row-actions" style="margin-top:16px">
+          <button class="btn btn-primary" type="submit" id="save-item">Save item</button>
+          <button class="btn btn-light" type="button" id="cancel-item">Cancel</button>
+          <a class="btn btn-ghost hidden" id="listing-link" href="#" target="_blank" rel="noopener">Listing text →</a>
+          <button class="btn btn-ghost hidden" type="button" id="delete-item" style="color:#8a2b1f">Delete item</button>
+        </div>
+      </form>
+      <div class="divider"></div>
+    </div>
+
+    <div class="admin-list" id="list"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Recent stock changes</h2></div>
+    <div id="log-list"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Backup</h2></div>
+    <p class="small muted" style="margin:0 0 12px">
+      Everything lives in the <code>data/</code> folder — copying that folder is a full backup.
+      This button does the same thing as a single file you can keep off the computer.
+    </p>
+    <div class="row-actions">
+      <a class="btn btn-light" id="backup-export" href="/api/admin/backup" download>Download backup (JSON)</a>
+    </div>
+    <div class="field" style="margin-top:16px">
+      <label for="backup-file">Restore from a backup file</label>
+      <input id="backup-file" type="file" accept=".json,application/json">
+      <span class="small muted" style="display:block;margin-top:6px">
+        This replaces the current catalogue. The admin password is not affected.
+      </span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Site details</h2></div>
+    <form id="site-form">
+      <div class="grid-2">
+        <div class="field">
+          <label for="s-brand">Business name</label>
+          <input id="s-brand" type="text" placeholder="YOUR BUSINESS NAME">
+        </div>
+        <div class="field">
+          <label for="s-tagline">Tagline</label>
+          <input id="s-tagline" type="text" placeholder="Sectional Couches · Bed Frames · Furniture Deals">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="s-facebook">Facebook page URL</label>
+          <input id="s-facebook" type="url" placeholder="https://www.facebook.com/yourpage">
+        </div>
+        <div class="field">
+          <label for="s-messenger">Messenger link (optional)</label>
+          <input id="s-messenger" type="url" placeholder="https://m.me/yourpage">
+        </div>
+      </div>
+      <div class="field">
+        <label for="s-publicUrl">Public website address</label>
+        <input id="s-publicUrl" type="url" placeholder="https://sagebrushfurniture.com">
+        <span class="small muted" style="display:block;margin-top:6px">
+          Used for the QR code on your card and every link you share with buyers. Until the site is live,
+          leave this as the address you plan to publish at.
+        </span>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="s-city">City / area</label>
+          <input id="s-city" type="text" placeholder="Salt Lake City area, UT">
+        </div>
+        <div class="field">
+          <label for="s-phone">Phone (optional)</label>
+          <input id="s-phone" type="text" placeholder="(512) 555-0134">
+        </div>
+      </div>
+      <div class="field">
+        <label for="s-email">Email (optional)</label>
+        <input id="s-email" type="text" placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label for="s-pickup">Pickup / delivery note (English)</label>
+        <textarea id="s-pickup"></textarea>
+      </div>
+      <div class="field">
+        <label for="s-address">Pickup address (shown on card &amp; item pages)</label>
+        <input id="s-address" type="text" placeholder="46 Orange Street, Salt Lake City, UT 84116">
+      </div>
+      <div class="field">
+        <label for="s-gate">Pickup gate note — how buyers find the door (optional)</label>
+        <input id="s-gate" type="text" placeholder="Pickup gate: the four white roll-up doors on the building">
+      </div>
+      <div class="field">
+        <label>Categories — the filter boards on your home page</label>
+        <div class="cat-manager" id="cat-manager">
+          <div class="cat-rows" id="cat-rows"></div>
+          <div class="cat-add">
+            <input id="cat-new" type="text" placeholder="New category — e.g. TV Stand" maxlength="60">
+            <button class="btn btn-light" id="cat-add-btn" type="button">Add category</button>
+          </div>
+          <p class="small muted" style="margin:10px 0 0">
+            Add, rename, reorder and remove categories here — they appear instantly as filter buttons on the
+            home page. You can also add one on the fly from the item form. A category can only be deleted
+            while no items use it; renaming can re-tag existing items in one step.
+          </p>
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit">Save site details</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Change password</h2></div>
+    <form id="pw-form">
+      <div class="grid-2">
+        <div class="field">
+          <label for="pw-current">Current password</label>
+          <input id="pw-current" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="field">
+          <label for="pw-next">New password</label>
+          <input id="pw-next" type="password" autocomplete="new-password" required minlength="6">
+        </div>
+      </div>
+      <button class="btn btn-light" type="submit">Update password</button>
+    </form>
+  </section>
+</div>
+
+<script src="/assets/app.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id)
+  let site = null
+  let products = []
+  let draftImages = []
+  let logEntries = []
+
+  // ---------- gate ----------
+  async function boot() {
+    let state
+    try {
+      state = await App.api('/api/admin/state')
+    } catch {
+      $('gate').classList.remove('hidden')
+      $('gate-error').textContent = 'Cannot reach the server.'
+      return
+    }
+    if (state.needsSetup) return showGate('setup')
+    if (!state.signedIn) return showGate('login')
+    await enterApp()
+  }
+
+  function showGate(mode) {
+    $('app').classList.add('hidden')
+    $('gate').classList.remove('hidden')
+    const isSetup = mode === 'setup'
+    $('gate-title').textContent = isSetup ? 'Set your admin password' : 'Sign in'
+    $('gate-hint').textContent = isSetup
+      ? 'First run — choose a password for this admin panel. Only you use it; buyers never sign in.'
+      : 'Manage inventory, photos and site details.'
+    $('gate-confirm-field').classList.toggle('hidden', !isSetup)
+    $('gate-submit').textContent = isSetup ? 'Set password & sign in' : 'Sign in'
+    $('gate-form').dataset.mode = mode
+    $('gate-password').value = ''
+    $('gate-confirm').value = ''
+    $('gate-password').focus()
+  }
+
+  $('gate-form').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const mode = e.currentTarget.dataset.mode
+    const password = $('gate-password').value
+    $('gate-error').textContent = ''
+    if (mode === 'setup' && password !== $('gate-confirm').value) {
+      $('gate-error').textContent = 'Passwords do not match.'
+      return
+    }
+    try {
+      if (mode === 'setup') await App.api('/api/admin/setup', { method: 'POST', body: JSON.stringify({ password }) })
+      else await App.api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password }) })
+      $('gate').classList.add('hidden')
+      await enterApp()
+    } catch (err) {
+      $('gate-error').textContent = err.message
+    }
+  })
+
+  $('signout').addEventListener('click', async () => {
+    await App.api('/api/admin/logout', { method: 'POST' }).catch(() => {})
+    location.reload()
+  })
+
+  // ---------- app ----------
+  async function enterApp() {
+    $('gate').classList.add('hidden')
+    $('app').classList.remove('hidden')
+    await loadAll()
+  }
+
+  async function loadAll() {
+    const [siteData, listData, logData, stats] = await Promise.all([
+      App.api('/api/admin/site'),
+      App.api('/api/products?all=1'),
+      App.api('/api/admin/log').catch(() => ({ log: [] })),
+      App.api('/api/admin/stats').catch(() => ({})),
+    ])
+    site = siteData
+    products = listData.products || []
+    logEntries = logData.log || []
+    $('admin-brand').textContent = site.brand || 'Inventory'
+    fillSiteForm()
+    renderStats(stats)
+    renderDelist()
+    renderList()
+    renderLog()
+  }
+
+  function renderStats(stats) {
+    const tiles = [
+      [stats.listed ?? 0, 'pieces listed'],
+      [stats.units ?? 0, 'units in stock'],
+      [App.money(stats.askingValue || 0), 'asking value'],
+      [stats.notPosted ?? 0, 'not on Marketplace'],
+    ]
+    $('stats').innerHTML = tiles
+      .map(([n, l]) => `<div class="stat-tile"><span class="n">${App.esc(String(n))}</span><span class="l">${App.esc(l)}</span></div>`)
+      .join('')
+  }
+
+  // Sold items left up on Marketplace are the #1 source of "is this still available?"
+  // messages, so surface them until the owner confirms they took the listing down.
+  function renderDelist() {
+    const pending = products.filter((p) => p.status === 'sold' && p.listedOnMarketplace && !p.delistedAt)
+    const host = $('delist-panel')
+    if (!pending.length) {
+      host.innerHTML = ''
+      return
+    }
+    host.className = 'panel alert'
+    host.style.marginBottom = '20px'
+    host.innerHTML = `
+      <div class="panel-head"><h2>Take these down on Marketplace</h2></div>
+      <p class="small" style="margin:0 0 4px;color:var(--warn)">
+        These are sold here but your Marketplace listing may still be live. Buyers will message you about furniture you no longer have.
+      </p>
+      ${pending
+        .map(
+          (p) => `<div class="reminder-row">
+          <span class="t"><strong>${App.esc(p.title)}</strong>${p.code ? ' · #' + App.esc(p.code) : ''}</span>
+          ${p.marketplaceUrl ? `<a class="btn btn-sm btn-light" href="${App.esc(p.marketplaceUrl)}" target="_blank" rel="noopener">Open listing</a>` : ''}
+          <button class="btn btn-sm btn-primary" data-delist="${App.esc(p.id)}" type="button">Done — removed</button>
+        </div>`,
+        )
+        .join('')}`
+  }
+
+  function renderLog() {
+    const host = $('log-list')
+    if (!logEntries.length) {
+      host.innerHTML = '<p class="small muted" style="margin:0">No stock changes recorded yet. Use the − / + buttons next to each item.</p>'
+      return
+    }
+    host.innerHTML = logEntries
+      .slice(0, 14)
+      .map((e) => {
+        const when = new Date(e.at)
+        const time = Number.isFinite(when.getTime())
+          ? when.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : ''
+        const cls = e.change > 0 ? 'plus' : 'minus'
+        return `<div class="log-row">
+          <span class="when">${App.esc(time)}</span>
+          <span class="what">${App.esc(e.title || '')} · ${App.esc(e.reason || '')}</span>
+          <span><span class="delta ${cls}">${e.change > 0 ? '+' : ''}${e.change}</span> <span class="left">${e.left} left</span></span>
+        </div>`
+      })
+      .join('')
+  }
+
+  function fillSiteForm() {
+    $('s-brand').value = site.brand || ''
+    $('s-tagline').value = site.tagline || ''
+    $('s-facebook').value = site.facebookUrl || ''
+    $('s-messenger').value = site.messengerUrl || ''
+    $('s-publicUrl').value = site.publicUrl || ''
+    $('s-city').value = site.city || ''
+    $('s-phone').value = site.phone || ''
+    $('s-email').value = site.email || ''
+    $('s-pickup').value = site.pickupNote || ''
+    $('s-address').value = site.address || ''
+    $('s-gate').value = site.gateNote || ''
+    renderCatRows()
+  }
+
+  // ---------- category manager ----------
+  // Categories are an ordered list in site.categories. Add / rename / delete /
+  // reorder each save immediately, so the home-page filter boards always match
+  // what the operator sees here. Deletion is blocked while items still use a
+  // category; renaming can re-tag those items in one step.
+  function catCount(name) {
+    return products.filter((p) => (p.category || '').toLowerCase() === name.toLowerCase()).length
+  }
+
+  function renderCatRows() {
+    const rows = $('cat-rows')
+    const cats = site.categories || []
+    if (!cats.length) {
+      rows.innerHTML = '<div class="small muted">No categories yet — add your first one below.</div>'
+      return
+    }
+    rows.innerHTML = cats
+      .map((c, i) => {
+        const n = catCount(c)
+        return `<div class="cat-row" data-cat="${App.esc(c)}" data-index="${i}">
+          <span class="cat-drag" title="Order on the home page">${i + 1}</span>
+          <span class="cat-name">${App.esc(c)}</span>
+          <span class="cat-count${n ? '' : ' is-zero'}">${n} item${n === 1 ? '' : 's'}</span>
+          <span class="cat-actions">
+            <button type="button" data-role="up" ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button>
+            <button type="button" data-role="down" ${i === cats.length - 1 ? 'disabled' : ''} aria-label="Move down">↓</button>
+            <button type="button" data-role="rename" class="link">Rename</button>
+            <button type="button" data-role="del" class="link danger">Delete</button>
+          </span>
+        </div>`
+      })
+      .join('')
+  }
+
+  async function saveCategories(next, okMessage) {
+    try {
+      await App.api('/api/admin/site', { method: 'PUT', body: JSON.stringify({ categories: next }) })
+      site.categories = next
+      renderCatRows()
+      App.toast(okMessage)
+      return true
+    } catch (err) {
+      App.toast(err.message, true)
+      return false
+    }
+  }
+
+  function addCategory() {
+    const input = $('cat-new')
+    const name = input.value.trim()
+    if (!name) { App.toast('Type a category name first', true); return }
+    const cats = site.categories || []
+    if (cats.some((c) => c.toLowerCase() === name.toLowerCase())) {
+      App.toast('That category already exists', true)
+      return
+    }
+    if (cats.length >= 40) { App.toast('Category limit reached (40)', true); return }
+    saveCategories(cats.concat(name), `Category “${name}” added`)
+    input.value = ''
+  }
+
+  function moveCategory(index, dir) {
+    const cats = (site.categories || []).slice()
+    const j = index + dir
+    if (j < 0 || j >= cats.length) return
+    const [item] = cats.splice(index, 1)
+    cats.splice(j, 0, item)
+    saveCategories(cats, 'Order updated')
+  }
+
+  async function deleteCategory(name) {
+    const n = catCount(name)
+    if (n > 0) {
+      App.toast(`${n} item${n === 1 ? '' : 's'} still use “${name}” — move ${n === 1 ? 'it' : 'them'} to another category first`, true)
+      return
+    }
+    if (!confirm(`Delete the category “${name}”?`)) return
+    saveCategories((site.categories || []).filter((c) => c !== name), `Category “${name}” deleted`)
+  }
+
+  async function renameCategory(name) {
+    const row = document.querySelector(`.cat-row[data-cat="${CSS.escape(name)}"]`)
+    const n = catCount(name)
+    if (!row) return
+    row.classList.add('is-editing')
+    row.innerHTML = `<input class="cat-rename-input" type="text" value="${App.esc(name)}" maxlength="60">
+      <label class="cat-retag${n ? '' : ' is-hidden'}"><input type="checkbox" id="cat-retag"${n ? ' checked' : ''}${n ? '' : ' disabled'}> Also update ${n} item${n === 1 ? '' : 's'}</label>
+      <span class="cat-actions">
+        <button type="button" data-role="save" class="link">Save</button>
+        <button type="button" data-role="cancel" class="link muted">Cancel</button>
+      </span>`
+    const input = row.querySelector('.cat-rename-input')
+    input.focus()
+    input.select()
+    const finish = () => { row.classList.remove('is-editing'); renderCatRows() }
+    row.querySelector('[data-role="cancel"]').addEventListener('click', finish)
+    row.querySelector('[data-role="save"]').addEventListener('click', async () => {
+      const to = input.value.trim()
+      if (!to || to === name) { finish(); return }
+      const retag = n > 0 && row.querySelector('#cat-retag').checked
+      try {
+        const r = await App.api('/api/admin/categories/rename', {
+          method: 'POST',
+          body: JSON.stringify({ from: name, to, updateItems: retag }),
+        })
+        site.categories = (site.categories || []).map((c) => (c === name ? to : c))
+        finish()
+        if (r.updated) await loadAll()
+        App.toast(r.updated ? `Renamed and updated ${r.updated} item${r.updated === 1 ? '' : 's'}` : 'Category renamed')
+      } catch (err) {
+        App.toast(err.message, true)
+      }
+    })
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') row.querySelector('[data-role="save"]').click()
+      if (e.key === 'Escape') finish()
+    })
+  }
+
+  // Add a brand-new category straight from the item form — the 5-second path.
+  async function quickAddCategory(selectEl) {
+    const fallback = selectEl.dataset.prev || (site.categories || [])[0] || ''
+    const name = (window.prompt ? window.prompt('New category name (e.g. TV Stand)') : '') || ''
+    const trimmed = name.trim()
+    if (!trimmed) {
+      selectEl.innerHTML = categoryOptions(fallback)
+      selectEl.value = fallback
+      return
+    }
+    const cats = site.categories || []
+    if (!cats.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      const ok = await saveCategories(cats.concat(trimmed), `Category “${trimmed}” added`)
+      if (!ok) {
+        selectEl.innerHTML = categoryOptions(fallback)
+        selectEl.value = fallback
+        return
+      }
+    }
+    selectEl.innerHTML = categoryOptions(trimmed)
+    selectEl.value = trimmed
+  }
+
+  function renderList() {
+    const list = $('list')
+    const available = products.filter((p) => p.status === 'available' && !p.hidden).length
+    $('inv-count').textContent = `${products.length} items · ${available} live`
+    if (!products.length) {
+      list.innerHTML = `<div class="empty">No items yet. Tap “+ New item” to add your first piece.</div>`
+      return
+    }
+    list.innerHTML = products
+      .map((p) => {
+        const cover = p.images && p.images[0] ? p.images[0].thumb || p.images[0].full : ''
+        const qty = Number(p.quantity)
+        const missing = App.missingFields(p)
+        const mpLabel = p.listedOnMarketplace
+          ? '<span class="posted">On Marketplace</span>'
+          : '<span class="notposted">Not posted yet</span>'
+        return `<div class="admin-item" data-id="${App.esc(p.id)}">
+          ${cover ? `<img src="${App.esc(cover)}" alt="">` : `<img alt="" style="background:#eee">`}
+          <div>
+            <div class="t">${App.esc(p.title)}${p.hidden ? ' <span class="small muted">(hidden)</span>' : ''}</div>
+            <div class="m">${App.esc(p.category)} · ${App.money(p.price)}${p.code ? ' · #' + App.esc(p.code) : ''} · ${(p.images || []).length} photo${(p.images || []).length === 1 ? '' : 's'} · ${mpLabel}</div>
+            ${
+              missing.length && p.status !== 'sold'
+                ? `<div class="m" style="color:var(--warn);margin-top:3px">Missing: ${missing.join(', ')}</div>`
+                : ''
+            }
+            <div class="row-actions" style="margin-top:8px;align-items:center">
+              <span class="stepper" title="Units in stock — the − button marks one unit sold">
+                <button type="button" data-role="dec" ${qty <= 0 ? 'disabled' : ''} aria-label="Decrease stock">−</button>
+                <span class="val">${Number.isFinite(qty) ? qty : 0}</span>
+                <button type="button" data-role="inc" aria-label="Increase stock">+</button>
+              </span>
+              <select data-role="status" style="width:auto;padding:5px 8px;font-size:.78rem" aria-label="Status">
+                ${['available', 'pending', 'sold']
+                  .map((s) => `<option value="${s}"${p.status === s ? ' selected' : ''}>${App.STATUS[s].label}</option>`)
+                  .join('')}
+              </select>
+              <button class="btn btn-sm btn-light" data-role="edit" type="button">Edit</button>
+              <a class="btn btn-sm btn-ghost" href="/listing/${encodeURIComponent(p.id)}" target="_blank" rel="noopener">Listing text</a>
+              <a class="btn btn-sm btn-ghost" href="/p/${encodeURIComponent(p.id)}" target="_blank" rel="noopener">View</a>
+              <button class="btn btn-sm btn-light" data-role="hide" type="button">${p.hidden ? 'Show' : 'Hide'}</button>
+            </div>
+          </div>
+          <div class="row-actions"></div>
+        </div>`
+      })
+      .join('')
+  }
+
+  $('delist-panel').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-delist]')
+    if (!btn) return
+    try {
+      await App.api(`/api/admin/products/${btn.dataset.delist}`, {
+        method: 'PUT',
+        body: JSON.stringify({ delistedAt: new Date().toISOString() }),
+      })
+      await loadAll()
+      App.toast('Marked as removed from Marketplace')
+    } catch (err) {
+      App.toast(err.message, true)
+    }
+  })
+
+  $('list').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-role]')
+    if (!btn) return
+    const item = btn.closest('.admin-item')
+    const id = item.dataset.id
+    const product = products.find((p) => p.id === id)
+    if (!product) return
+
+    if (btn.dataset.role === 'edit') return openEditor(product)
+    if (btn.dataset.role === 'hide') {
+      await saveProduct(id, { hidden: !product.hidden })
+      return
+    }
+    if (btn.dataset.role === 'inc' || btn.dataset.role === 'dec') {
+      const delta = btn.dataset.role === 'inc' ? 1 : -1
+      btn.disabled = true
+      try {
+        const res = await App.api(`/api/admin/products/${id}/stock`, {
+          method: 'POST',
+          body: JSON.stringify({ delta, reason: delta < 0 ? 'sold / removed' : 'restock' }),
+        })
+        await loadAll()
+        App.toast(`${product.title}: ${res.product.quantity} left`)
+      } catch (err) {
+        App.toast(err.message, true)
+        btn.disabled = false
+      }
+    }
+  })
+
+  $('list').addEventListener('change', async (e) => {
+    const sel = e.target.closest('select[data-role="status"]')
+    if (!sel) return
+    const id = sel.closest('.admin-item').dataset.id
+    await saveProduct(id, { status: sel.value })
+  })
+
+  async function saveProduct(id, patch) {
+    try {
+      await App.api(`/api/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(patch) })
+      await loadAll()
+      App.toast('Saved')
+    } catch (err) {
+      App.toast(err.message, true)
+    }
+  }
+
+  // ---------- editor ----------
+  function categoryOptions(current) {
+    const cats = [...(site.categories || [])]
+    if (current && !cats.includes(current)) cats.push(current)
+    const opts = cats.map((c) => `<option value="${App.esc(c)}"${c === current ? ' selected' : ''}>${App.esc(c)}</option>`).join('')
+    return opts + '<option value="__new__">＋ New category…</option>'
+  }
+
+  function openEditor(product) {
+    const isNew = !product
+    const p = product || {
+      title: '',
+      code: '',
+      category: (site.categories || [])[0] || 'Furniture',
+      price: '',
+      quantity: 1,
+      status: 'available',
+      dimensions: '',
+      color: '',
+      condition: '',
+      includes: '',
+      notIncluded: '',
+      priceNote: '',
+      description: '',
+      images: [],
+      hidden: false,
+      listedOnMarketplace: false,
+      marketplaceUrl: '',
+    }
+    $('f-id').value = p.id || ''
+    $('f-title').value = p.title || ''
+    $('f-code').value = p.code || ''
+    $('f-category').innerHTML = categoryOptions(p.category)
+    $('f-category').dataset.prev = p.category || ''
+    $('f-price').value = p.price === 0 || p.price ? p.price : ''
+    $('f-quantity').value = Number.isFinite(Number(p.quantity)) ? Number(p.quantity) : 1
+    $('f-status').value = p.status || 'available'
+    $('f-dimensions').value = p.dimensions || ''
+    $('f-color').value = p.color || ''
+    $('f-condition').value = p.condition || ''
+    $('f-includes').value = p.includes || ''
+    $('f-notIncluded').value = p.notIncluded || ''
+    $('f-priceNote').value = p.priceNote || ''
+    $('f-description').value = p.description || ''
+    $('f-hidden').checked = Boolean(p.hidden)
+    $('f-listedOnMarketplace').checked = Boolean(p.listedOnMarketplace)
+    $('f-marketplaceUrl').value = p.marketplaceUrl || ''
+    draftImages = (p.images || []).map((img) => ({ ...img }))
+    renderImages()
+    $('delete-item').classList.toggle('hidden', isNew)
+    const listingLink = $('listing-link')
+    listingLink.classList.toggle('hidden', isNew)
+    listingLink.href = isNew ? '#' : `/listing/${encodeURIComponent(p.id)}`
+    $('editor').classList.remove('hidden')
+    $('editor').scrollIntoView({ behavior: 'smooth', block: 'start' })
+    $('f-title').focus()
+  }
+
+  function closeEditor() {
+    $('editor').classList.add('hidden')
+    $('item-form').reset()
+    $('f-id').value = ''
+    draftImages = []
+  }
+
+  $('new-item').addEventListener('click', () => openEditor(null))
+  $('cancel-item').addEventListener('click', closeEditor)
+
+  function renderImages() {
+    $('img-grid').innerHTML = draftImages
+      .map(
+        (img, i) => `<div class="img-tile">
+          <img src="${App.esc(img.thumb || img.full)}" alt="">
+          ${i === 0 ? '<span class="cover-tag">Cover</span>' : `<button type="button" data-act="cover" data-i="${i}" title="Make cover">★</button>`}
+          <button type="button" data-act="remove" data-i="${i}" title="Remove">×</button>
+        </div>`,
+      )
+      .join('')
+  }
+
+  $('img-grid').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-act]')
+    if (!btn) return
+    const i = Number(btn.dataset.i)
+    if (btn.dataset.act === 'remove') draftImages.splice(i, 1)
+    if (btn.dataset.act === 'cover') {
+      const [img] = draftImages.splice(i, 1)
+      draftImages.unshift(img)
+    }
+    renderImages()
+  })
+
+  const dz = $('dropzone')
+  const fileInput = $('file-input')
+  dz.addEventListener('click', () => fileInput.click())
+  dz.addEventListener('dragover', (e) => {
+    e.preventDefault()
+    dz.classList.add('is-over')
+  })
+  dz.addEventListener('dragleave', () => dz.classList.remove('is-over'))
+  dz.addEventListener('drop', (e) => {
+    e.preventDefault()
+    dz.classList.remove('is-over')
+    handleFiles(e.dataTransfer.files)
+  })
+  fileInput.addEventListener('change', () => {
+    handleFiles(fileInput.files)
+    fileInput.value = ''
+  })
+
+  function shrink(file, maxW, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const scale = Math.min(1, maxW / img.naturalWidth)
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(img.naturalWidth * scale)
+        canvas.height = Math.round(img.naturalHeight * scale)
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.onerror = () => {
+        URL.revokeObjectURL(url)
+        reject(new Error('Could not read that image'))
+      }
+      img.src = url
+    })
+  }
+
+  async function handleFiles(files) {
+    const list = Array.from(files || []).filter((f) => f.type.startsWith('image/'))
+    if (!list.length) return
+    if (draftImages.length + list.length > 12) {
+      App.toast('Up to 12 photos per item', true)
+      return
+    }
+    dz.textContent = 'Uploading…'
+    try {
+      for (const file of list) {
+        const [full, thumb] = await Promise.all([shrink(file, 1600, 0.82), shrink(file, 640, 0.75)])
+        const saved = await App.api('/api/admin/upload', {
+          method: 'POST',
+          body: JSON.stringify({ full, thumb }),
+        })
+        draftImages.push(saved)
+        renderImages()
+      }
+      App.toast('Photos uploaded')
+    } catch (err) {
+      App.toast(err.message, true)
+    } finally {
+      dz.innerHTML = `Tap to choose photos · or drop files here<br><span class="small">JPG / PNG / WebP. Resized automatically before upload.</span>`
+      dz.appendChild(fileInput)
+    }
+  }
+
+  $('item-form').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const id = $('f-id').value
+    const payload = {
+      title: $('f-title').value,
+      code: $('f-code').value,
+      category: $('f-category').value,
+      price: Number($('f-price').value) || 0,
+      quantity: Math.max(0, Number($('f-quantity').value) || 0),
+      status: $('f-status').value,
+      dimensions: $('f-dimensions').value,
+      color: $('f-color').value,
+      condition: $('f-condition').value,
+      includes: $('f-includes').value,
+      notIncluded: $('f-notIncluded').value,
+      priceNote: $('f-priceNote').value,
+      description: $('f-description').value,
+      hidden: $('f-hidden').checked,
+      listedOnMarketplace: $('f-listedOnMarketplace').checked,
+      marketplaceUrl: $('f-marketplaceUrl').value.trim(),
+      images: draftImages,
+    }
+    const btn = $('save-item')
+    btn.disabled = true
+    try {
+      if (id) await App.api(`/api/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+      else await App.api('/api/admin/products', { method: 'POST', body: JSON.stringify(payload) })
+      closeEditor()
+      await loadAll()
+      App.toast(id ? 'Item updated' : 'Item published')
+    } catch (err) {
+      App.toast(err.message, true)
+    } finally {
+      btn.disabled = false
+    }
+  })
+
+  $('delete-item').addEventListener('click', async () => {
+    const id = $('f-id').value
+    if (!id) return
+    const product = products.find((p) => p.id === id)
+    if (!confirm(`Delete “${product ? product.title : 'this item'}” and its photos? This cannot be undone.`)) return
+    try {
+      await App.api(`/api/admin/products/${id}`, { method: 'DELETE' })
+      closeEditor()
+      await loadAll()
+      App.toast('Item deleted')
+    } catch (err) {
+      App.toast(err.message, true)
+    }
+  })
+
+  // ---------- site settings ----------
+  // Categories are NOT part of this form — the category manager saves them
+  // immediately (add / rename / delete / reorder), so the two never conflict.
+  $('site-form').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const payload = {
+      brand: $('s-brand').value,
+      tagline: $('s-tagline').value,
+      facebookUrl: $('s-facebook').value,
+      messengerUrl: $('s-messenger').value,
+      publicUrl: $('s-publicUrl').value,
+      city: $('s-city').value,
+      phone: $('s-phone').value,
+      email: $('s-email').value,
+      pickupNote: $('s-pickup').value,
+      address: $('s-address').value,
+      gateNote: $('s-gate').value,
+    }
+    try {
+      await App.api('/api/admin/site', { method: 'PUT', body: JSON.stringify(payload) })
+      await loadAll()
+      App.toast('Site details saved')
+    } catch (err) {
+      App.toast(err.message, true)
+    }
+  })
+
+  // ---------- category manager wiring ----------
+  $('cat-add-btn').addEventListener('click', addCategory)
+  $('cat-new').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addCategory() }
+  })
+  $('cat-rows').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-role]')
+    if (!btn) return
+    const row = btn.closest('.cat-row')
+    const name = row.dataset.cat
+    const index = Number(row.dataset.index)
+    const role = btn.dataset.role
+    if (role === 'up') moveCategory(index, -1)
+    else if (role === 'down') moveCategory(index, 1)
+    else if (role === 'rename') renameCategory(name)
+    else if (role === 'del') deleteCategory(name)
+  })
+
+  // Item form: the last dropdown entry creates a category on the fly.
+  $('f-category').addEventListener('change', (e) => {
+    const sel = e.target
+    if (sel.value !== '__new__') { sel.dataset.prev = sel.value; return }
+    if (!sel.dataset.prev) sel.dataset.prev = (site.categories || [])[0] || ''
+    quickAddCategory(sel)
+  })
+
+  $('pw-form').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    try {
+      await App.api('/api/admin/password', {
+        method: 'POST',
+        body: JSON.stringify({ current: $('pw-current').value, next: $('pw-next').value }),
+      })
+      $('pw-form').reset()
+      App.toast('Password updated')
+    } catch (err) {
+      App.toast(err.message, true)
+    }
+  })
+
+  // ---------- backup restore ----------
+  $('backup-file').addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0]
+    if (!file) return
+    e.target.value = ''
+    let parsed
+    try {
+      parsed = JSON.parse(await file.text())
+    } catch {
+      App.toast('That file is not valid JSON', true)
+      return
+    }
+    if (!parsed || !Array.isArray(parsed.products)) {
+      App.toast('That is not a backup from this site', true)
+      return
+    }
+    const count = parsed.products.length
+    if (!confirm(`Restore ${count} item${count === 1 ? '' : 's'} from this backup?\n\nThis replaces the current catalogue.`)) return
+    try {
+      await App.api('/api/admin/backup', { method: 'POST', body: JSON.stringify(parsed) })
+      await loadAll()
+      App.toast('Backup restored')
+    } catch (err) {
+      App.toast(err.message, true)
+    }
+  })
+
+  boot()
+})()
+</script>
+</body>
+</html>

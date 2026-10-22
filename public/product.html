@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Item — Sagebrush Furniture</title>
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<main class="wrap detail" id="detail">
+  <a class="backlink" href="/">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+    All available furniture
+  </a>
+  <div id="detail-body"><p class="muted">Loading…</p></div>
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="/assets/app.js"></script>
+<script>
+(async function () {
+  const id = (location.pathname.match(/^\/p\/([\w-]+)/) || [])[1] || new URLSearchParams(location.search).get('id')
+  const body = document.getElementById('detail-body')
+
+  let site = {}
+  let product = null
+  try {
+    const [siteData, res] = await Promise.all([App.api('/api/site'), App.api(`/api/products/${encodeURIComponent(id)}`)])
+    site = siteData
+    product = res.product
+  } catch (err) {
+    App.renderHeader({}, 'home')
+    body.innerHTML = `<div class="empty">
+      <strong style="display:block;font-family:var(--serif);font-size:1.2rem;color:var(--ink);margin-bottom:8px">This item is no longer listed</strong>
+      It may have sold. <a href="/" style="color:var(--accent);text-decoration:underline">Browse what is available now</a>.
+    </div>`
+    return
+  }
+
+  App.renderHeader(site, 'home')
+  App.renderFooter(site)
+  document.title = `${product.title} · ${App.money(product.price)} — ${site.brand || 'Available Furniture'}`
+
+  const shareUrl = App.productLink(product.id, site)
+  const st = App.STATUS[product.status] || App.STATUS.available
+  const images = product.images && product.images.length ? product.images : []
+  const cover = images[0] ? images[0].full : ''
+  const isSold = product.status === 'sold'
+
+  const specs = [
+    ['Item code', product.code],
+    ['Category', product.category],
+    ['Size', product.dimensions],
+    ['Color', product.color],
+    ['Condition', product.condition],
+    ['Included', product.includes],
+    ['NOT included', product.notIncluded],
+  ].filter(([, v]) => v)
+
+  const askHref = App.messengerHref(site, App.askText(product, site))
+  const quoteHref = App.messengerHref(
+    site,
+    `Hi! I'd like a delivery quote for ${product.title}${product.code ? ` (item code ${product.code})` : ''}. My ZIP code is ____. Stairs / access notes: ____.`,
+  )
+  const fbHref = site.facebookUrl || App.messengerHref(site, '')
+
+  body.innerHTML = `
+    <div class="detail-grid">
+      <div>
+        <div class="gallery-main" id="gallery-main">
+          ${
+            cover
+              ? `<img id="main-img" src="${App.esc(cover)}" alt="${App.esc(product.title)}">`
+              : `<div class="empty" style="height:100%;display:grid;place-items:center;border:0;border-radius:0">Photos coming soon</div>`
+          }
+          ${images.length ? '<span class="zoom-hint">Click to enlarge</span>' : ''}
+        </div>
+        ${
+          images.length > 1
+            ? `<div class="thumbs" id="thumbs">${images
+                .map(
+                  (img, i) =>
+                    `<button class="thumb" aria-current="${i === 0}" data-full="${App.esc(img.full)}" data-alt="${App.esc(product.title)} — photo ${i + 1}"><img src="${App.esc(img.thumb || img.full)}" alt=""></button>`,
+                )
+                .join('')}</div>`
+            : ''
+        }
+      </div>
+
+      <div>
+        <div class="buybox">
+          <p class="eyebrow">${App.esc(product.category)}</p>
+          <h1>${App.esc(product.title)}</h1>
+          <div class="price-row">
+            <span class="price-lg">${App.money(product.price)}</span>
+            ${product.priceNote ? `<span class="muted small">${App.esc(product.priceNote)}</span>` : ''}
+          </div>
+          <div class="qty-line status-line">
+            <span class="dot ${isSold ? 'sold' : product.status === 'pending' ? 'pending' : ''}"></span>
+            <span>${st.label}${product.code ? ` · Item code <strong>${App.esc(product.code)}</strong>` : ''}</span>
+          </div>
+
+          ${
+            isSold
+              ? `<div class="notice"><strong>This one has sold</strong><p>Check the full list — new pieces come in regularly.</p></div>`
+              : `<div class="actions">
+            ${askHref ? `<a class="btn btn-primary btn-block" href="${App.esc(askHref)}" target="_blank" rel="noopener">Ask About This Item</a>` : ''}
+            ${fbHref ? `<a class="btn btn-ghost btn-block" href="${App.esc(fbHref)}" target="_blank" rel="noopener">Contact Us on Facebook</a>` : ''}
+            ${quoteHref ? `<a class="btn btn-ghost btn-block" href="${App.esc(quoteHref)}" target="_blank" rel="noopener">Request a Delivery Quote</a>` : ''}
+            ${!askHref && !fbHref ? `<p class="small muted" style="margin:0 0 2px">Contact links are not set up yet — add your Facebook / Messenger URL in the admin panel.</p>` : ''}
+            <button class="btn btn-light btn-block" id="copy-link" type="button">Copy item link</button>
+          </div>`
+          }
+
+          <div class="notice">
+            <strong>Pickup &amp; delivery</strong>
+            ${site.phone ? `<p><a href="tel:${App.esc(site.phone.replace(/[^\d+]/g, ''))}">Call or text ${App.esc(site.phone)}</a></p>` : ''}
+            ${site.address ? `<p>Pickup at: ${App.esc(site.address)}</p>` : ''}
+            ${site.gateNote ? `<p style="font-weight:600;color:var(--ink)">${App.esc(site.gateNote)}</p>` : ''}
+            <p>${App.esc(site.pickupNote || '')}</p>
+          </div>
+
+          ${specs.length ? `<dl class="specs">${specs
+            .map(([k, v]) => `<div class="spec-row"><dt>${App.esc(k)}</dt><dd>${App.esc(v)}</dd></div>`)
+            .join('')}</dl>` : ''}
+
+          ${
+            isSold
+              ? ''
+              : `<div class="row-actions" style="margin-top:16px">
+            <button class="btn btn-light btn-sm" id="share" type="button">Share</button>
+            <button class="btn btn-light btn-sm" id="copy-link-2" type="button">Copy item link</button>
+          </div>`
+          }
+        </div>
+
+        ${product.description ? `<div class="description">${App.esc(product.description)}</div>` : ''}
+      </div>
+    </div>
+    ${
+      isSold
+        ? ''
+        : `<div class="sticky-actions">
+      ${askHref ? `<a class="btn btn-primary" href="${App.esc(askHref)}" target="_blank" rel="noopener">Ask About This Item</a>` : ''}
+      ${quoteHref ? `<a class="btn btn-ghost" href="${App.esc(quoteHref)}" target="_blank" rel="noopener">Delivery Quote</a>` : ''}
+    </div>`
+    }`
+
+  // ----- gallery -----
+  const thumbs = document.getElementById('thumbs')
+  const mainImg = document.getElementById('main-img')
+  const gallery = document.getElementById('gallery-main')
+
+  function showImage(btn) {
+    if (!mainImg || !btn) return
+    mainImg.src = btn.dataset.full
+    if (thumbs) thumbs.querySelectorAll('.thumb').forEach((el) => el.setAttribute('aria-current', String(el === btn)))
+  }
+
+  if (thumbs) {
+    thumbs.addEventListener('click', (e) => {
+      const btn = e.target.closest('.thumb')
+      if (btn) showImage(btn)
+    })
+  }
+
+  if (gallery && mainImg) {
+    gallery.addEventListener('click', () => App.openLightbox(mainImg.src, product.title))
+  }
+
+  // ----- copy / share -----
+  const doCopy = () => App.copy(shareUrl, 'Item link copied')
+  const copyBtn = document.getElementById('copy-link')
+  if (copyBtn) copyBtn.addEventListener('click', doCopy)
+  const copyBtn2 = document.getElementById('copy-link-2')
+  if (copyBtn2) copyBtn2.addEventListener('click', doCopy)
+
+  const shareBtn = document.getElementById('share')
+  if (shareBtn) {
+    shareBtn.addEventListener('click', async () => {
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: product.title, text: `${product.title} — ${App.money(product.price)}`, url: shareUrl })
+          return
+        }
+      } catch {
+        /* user dismissed the share sheet — fall through to copy */
+      }
+      doCopy()
+    })
+  }
+})()
+</script>
+</body>
+</html>

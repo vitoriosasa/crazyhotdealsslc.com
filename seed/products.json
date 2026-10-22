@@ -1,0 +1,80 @@
+[
+  {
+    "id": "p_demo_sofa",
+    "code": "SF-1001",
+    "title": "DEMO — Linen Sectional Sofa (L-shape)",
+    "category": "Sectional Couches",
+    "price": 650,
+    "priceNote": "firm",
+    "status": "available",
+    "quantity": 1,
+    "hidden": false,
+    "dimensions": "L-shape: 96\" x 96\" x 34\"",
+    "color": "Oatmeal linen",
+    "condition": "Used – excellent, no stains",
+    "includes": "Both sections, 3 throw pillows",
+    "notIncluded": "Delivery (quoted by ZIP)",
+    "description": "Spacious L-shaped sectional in oatmeal linen. Pet-free, smoke-free home. Great for a family room. Local pickup in the Salt Lake City area; delivery available for an extra fee. DEMO ITEM — replace with your real listing.",
+    "images": [
+      { "full": "/media/demo-sofa.svg", "thumb": "/media/demo-sofa.svg" }
+    ],
+    "listedOnMarketplace": false,
+    "marketplaceUrl": "",
+    "soldAt": null,
+    "delistedAt": null,
+    "createdAt": "2026-10-22T10:00:00.000Z",
+    "updatedAt": "2026-10-22T10:00:00.000Z"
+  },
+  {
+    "id": "p_demo_bed",
+    "code": "BD-2002",
+    "title": "DEMO — Solid Wood Queen Bed Frame",
+    "category": "Bed Frames",
+    "price": 320,
+    "priceNote": "negotiable",
+    "status": "available",
+    "quantity": 2,
+    "hidden": false,
+    "dimensions": "Queen: 64\" W x 84\" L",
+    "color": "Natural oak",
+    "condition": "Used – minor scuff on footboard",
+    "includes": "Headboard, side rails, slats",
+    "notIncluded": "Mattress, box spring",
+    "description": "Sturdy solid-oak queen bed frame with slats (no box spring needed). Two available. DEMO ITEM — replace with your real listing.",
+    "images": [
+      { "full": "/media/demo-bed.svg", "thumb": "/media/demo-bed.svg" }
+    ],
+    "listedOnMarketplace": false,
+    "marketplaceUrl": "",
+    "soldAt": null,
+    "delistedAt": null,
+    "createdAt": "2026-10-22T10:05:00.000Z",
+    "updatedAt": "2026-10-22T10:05:00.000Z"
+  },
+  {
+    "id": "p_demo_table",
+    "code": "HF-3003",
+    "title": "DEMO — Oak Coffee Table",
+    "category": "Home Furniture",
+    "price": 140,
+    "priceNote": "",
+    "status": "sold",
+    "quantity": 0,
+    "hidden": false,
+    "dimensions": "42\" W x 22\" D x 17\" H",
+    "color": "Oak",
+    "condition": "Used – good",
+    "includes": "Table only",
+    "notIncluded": "",
+    "description": "Compact oak coffee table, sold within the last week (still shown for 7 days so the buyer's link works). DEMO ITEM — replace with your real listing.",
+    "images": [
+      { "full": "/media/demo-table.svg", "thumb": "/media/demo-table.svg" }
+    ],
+    "listedOnMarketplace": false,
+    "marketplaceUrl": "",
+    "soldAt": "2026-10-20T10:00:00.000Z",
+    "delistedAt": null,
+    "createdAt": "2026-10-18T10:00:00.000Z",
+    "updatedAt": "2026-10-20T10:00:00.000Z"
+  }
+]

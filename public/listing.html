@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listing text — Sagebrush Furniture admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<main class="wrap detail">
+  <a class="backlink" href="/admin">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+    Back to admin
+  </a>
+  <div id="page"><p class="muted">Loading…</p></div>
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="/assets/app.js"></script>
+<script>
+(async function () {
+  const id = (location.pathname.match(/^\/listing\/([\w-]+)/) || [])[1]
+  const page = document.getElementById('page')
+  if (!id) {
+    page.innerHTML = '<div class="empty">No item selected. Open this page from the admin inventory list.</div>'
+    return
+  }
+
+  let site = {}
+  let product = null
+  try {
+    const [siteData, res] = await Promise.all([
+      App.api('/api/site'),
+      App.api(`/api/admin/products/${encodeURIComponent(id)}`).catch(() => null),
+    ])
+    site = siteData
+    // Admin listing link needs auth; fall back to the public endpoint.
+    if (res && res.product) product = res.product
+    else {
+      const pub = await App.api(`/api/products/${encodeURIComponent(id)}`)
+      product = pub.product
+    }
+  } catch {
+    page.innerHTML = `<div class="empty">
+      <strong style="display:block;font-family:var(--serif);font-size:1.15rem;color:var(--ink);margin-bottom:8px">Cannot load this item</strong>
+      It may have been deleted. <a href="/admin" style="color:var(--accent);text-decoration:underline">Back to admin</a>.
+    </div>`
+    return
+  }
+
+  App.renderHeader(site, 'home')
+  App.renderFooter(site)
+  document.title = `${product.title} — listing text`
+
+  const missing = App.missingFields(product)
+  const photos = product.images || []
+  const priceText = product.price ? String(product.price) : ''
+  const titleText = App.listingTitle(product)
+  const descNoLink = App.listingDescription(product, site, false)
+  const descWithLink = App.listingDescription(product, site, true)
+
+  page.innerHTML = `
+    <div class="detail-grid" style="grid-template-columns:1fr">
+      <div style="max-width:760px">
+        <p class="eyebrow">Facebook Marketplace</p>
+        <h1 style="font-size:clamp(1.5rem,3vw,2rem)">${App.esc(product.title)}</h1>
+        <p class="small muted" style="margin:6px 0 0">
+          Copy each box, paste it into Marketplace, and upload the photos below. This page prepares the text —
+          you still post the listing yourself.
+        </p>
+
+        ${
+          missing.length
+            ? `<div class="notice"><strong>Missing ${missing.length} field${missing.length === 1 ? '' : 's'}</strong>
+                 <p>Buyers will have to message you to ask about: ${App.esc(missing.join(', '))}. Add them in
+                 <a href="/admin" style="text-decoration:underline">admin → Edit</a> first if you can — listings with
+                 size, condition and photos sell noticeably faster.</p></div>`
+            : `<div class="notice" style="background:var(--ok-soft);color:#33512b"><strong>Everything a buyer usually asks is filled in</strong>
+                 <p>Size, condition, what is and is not included — all present.</p></div>`
+        }
+
+        <div class="listing-grid" style="margin-top:22px">
+          <div class="panel" style="margin:0">
+            <div class="field">
+              <label for="l-title">Title</label>
+              <input id="l-title" type="text" value="${App.esc(titleText)}">
+              <button class="btn btn-sm btn-light" style="margin-top:8px" data-copy="l-title" type="button">Copy title</button>
+            </div>
+            <div class="field">
+              <label for="l-price">Price (USD)</label>
+              <input id="l-price" type="text" value="${App.esc(priceText)}" placeholder="Set a price in admin first">
+              <button class="btn btn-sm btn-light" style="margin-top:8px" data-copy="l-price" type="button">Copy price</button>
+            </div>
+            <div class="field">
+              <label for="l-category">Category</label>
+              <input id="l-category" type="text" value="${App.esc(product.category)}" readonly>
+            </div>
+            <div class="field">
+              <label for="l-link" style="display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-weight:500">
+                <input id="l-link" type="checkbox" style="width:auto;margin:0" checked>
+                Include the website link in the description
+              </label>
+            </div>
+          </div>
+
+          <div class="panel" style="margin:0">
+            <div class="field">
+              <label for="l-desc">Description</label>
+              <textarea id="l-desc" rows="14" style="min-height:260px">${App.esc(descWithLink)}</textarea>
+              <div class="row-actions" style="margin-top:8px">
+                <button class="btn btn-sm btn-light" data-copy="l-desc" type="button">Copy description</button>
+                <button class="btn btn-sm btn-light" id="copy-all" type="button">Copy everything</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="sec" style="margin:28px 0 12px;font-size:1.3rem">Photos</h2>
+        ${
+          photos.length
+            ? `<div class="photo-grid">${photos
+                .map(
+                  (img, i) => `<div class="photo-cell">
+                <img src="${App.esc(img.thumb || img.full)}" alt="Photo ${i + 1}">
+                <span class="n">${i === 0 ? 'Cover' : i + 1}</span>
+                <a class="dl" href="${App.esc(img.full)}" download="${App.esc((product.code || product.id) + '-' + (i + 1) + '.jpg')}">Download</a>
+              </div>`,
+                )
+                .join('')}</div>
+               <p class="small muted" style="margin-top:12px">
+                 Tap Download to save each photo, then upload them to your listing in this order — the first one is the photo buyers see in search results.
+               </p>`
+            : `<div class="empty">No photos yet. Add them in admin → Edit, then come back here.</div>`
+        }
+
+        <div class="btns" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:24px">
+          <a class="btn btn-primary" href="https://www.facebook.com/marketplace/create/item" target="_blank" rel="noopener">Open Facebook Marketplace</a>
+          <a class="btn btn-light" href="/p/${encodeURIComponent(product.id)}" target="_blank" rel="noopener">Preview the web page</a>
+          <a class="btn btn-light" href="/admin">Back to admin</a>
+        </div>
+
+        <div class="panel" style="margin-top:24px">
+          <div class="field" style="margin:0">
+            <label for="l-mp">After posting, paste your listing link here</label>
+            <input id="l-mp" type="url" value="${App.esc(product.marketplaceUrl || '')}" placeholder="https://www.facebook.com/marketplace/item/...">
+            <div class="row-actions" style="margin-top:10px">
+              <button class="btn btn-sm btn-primary" id="save-mp" type="button">Save link &amp; mark as posted</button>
+              ${product.listedOnMarketplace && product.delistedAt ? '<span class="small muted" style="align-self:center">Currently marked as removed.</span>' : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`
+
+  // ---- interactions ----
+  page.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-copy]')
+    if (!btn) return
+    const value = document.getElementById(btn.dataset.copy).value
+    if (!value) {
+      App.toast('Nothing to copy yet', true)
+      return
+    }
+    App.copy(value, 'Copied')
+  })
+
+  const linkToggle = document.getElementById('l-link')
+  linkToggle.addEventListener('change', () => {
+    document.getElementById('l-desc').value = linkToggle.checked ? descWithLink : descNoLink
+  })
+
+  document.getElementById('copy-all').addEventListener('click', () => {
+    const block = [
+      `Title: ${titleText}`,
+      `Price: $${priceText || '(set a price first)'}`,
+      `Category: ${product.category}`,
+      '',
+      descWithLink,
+    ].join('\n')
+    App.copy(block, 'Title, price and description copied')
+  })
+
+  document.getElementById('save-mp').addEventListener('click', async () => {
+    const url = document.getElementById('l-mp').value.trim()
+    try {
+      await App.api(`/api/admin/products/${encodeURIComponent(product.id)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ marketplaceUrl: url, listedOnMarketplace: true, delistedAt: null }),
+      })
+      App.toast('Saved — the reminder will stop showing')
+    } catch (err) {
+      App.toast(err.message, true)
+    }
+  })
+})()
+</script>
+</body>
+</html>

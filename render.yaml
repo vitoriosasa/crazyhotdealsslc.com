@@ -1,0 +1,26 @@
+# Render Blueprint — one-click-ish deploy of the furniture showroom.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# NOTE: a persistent disk requires a PAID instance (plan: starter or higher).
+# The free tier has no disk and an ephemeral filesystem — every deploy/restart
+# would wipe products, site settings and images. So we use starter + a 1GB disk.
+services:
+  - type: web
+    name: sagebrush-furniture
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    disk:
+      name: showroom-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Point all data (products.json, site.json, uploads/) at the disk so it
+      # survives deploys. First boot copies the bundled seed/ snapshot in.
+      - key: DATA_DIR
+        value: /var/data
+      # PORT is injected by Render automatically — do not set it here.
