@@ -131,7 +131,11 @@
                 : ''
             }
             ${site.gateNote ? `<p style="font-weight:600;color:var(--ink)">${App.esc(site.gateNote)}</p>` : ''}
-            <img src="/media/warehouse-gate.jpg" alt="Pickup gate — the four white roll-up doors on the building" loading="lazy" style="width:100%;max-width:440px;border-radius:10px;margin-top:10px;border:1px solid var(--line)" onerror="this.style.display='none'">
+            <button class="gate-toggle" id="gate-toggle" type="button" aria-expanded="false" aria-controls="pickup-photo">See gate photo</button>
+            <div class="pickup-photo" id="pickup-photo" hidden>
+              <img src="/media/warehouse-gate.jpg" alt="Pickup gate — the four white roll-up doors on the building" loading="lazy" onerror="this.closest('.pickup-photo').style.display='none'">
+              <p class="pickup-caption">Pickup gate — the four white roll-up doors, circled in red</p>
+            </div>
             <p>${App.esc(site.pickupNote || '')}</p>
           </div>
 
@@ -165,6 +169,18 @@
   const thumbs = document.getElementById('thumbs')
   const mainImg = document.getElementById('main-img')
   const gallery = document.getElementById('gallery-main')
+
+  // Gate photo: collapsed until asked for.
+  const gateBtn = document.getElementById('gate-toggle')
+  if (gateBtn) {
+    gateBtn.addEventListener('click', () => {
+      const photo = document.getElementById('pickup-photo')
+      const open = photo.hidden
+      photo.hidden = !open
+      gateBtn.setAttribute('aria-expanded', String(open))
+      gateBtn.textContent = open ? 'Hide gate photo' : 'See gate photo'
+    })
+  }
 
   function showImage(btn) {
     if (!mainImg || !btn) return

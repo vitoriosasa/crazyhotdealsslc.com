@@ -61,7 +61,13 @@ async function runAll() {
     ok(/Pickup hours:/.test(d.querySelector('#pickup-rows').textContent), 'home: pickup hours shown')
     ok(/four white roll-up doors/.test(d.querySelector('#pickup-rows').textContent), 'home: gate note shown')
     ok(/google\.com\/maps/.test(d.querySelector('#pickup-rows').innerHTML), 'home: Open in Maps link shown')
-    ok(d.querySelector('#pickup-gate') !== null, 'home: warehouse gate photo present')
+    ok(d.querySelector('#pickup-photo').hidden === true, 'home: gate photo collapsed by default')
+    const gateBtn = d.querySelector('#gate-toggle')
+    ok(gateBtn !== null && gateBtn.textContent === 'See gate photo', 'home: gate photo toggle present')
+    gateBtn.dispatchEvent(new dom.window.Event('click'))
+    ok(d.querySelector('#pickup-photo').hidden === false, 'home: clicking toggle reveals gate photo')
+    ok(d.querySelector('#gate-toggle').textContent === 'Hide gate photo', 'home: toggle label flips after opening')
+    ok(d.querySelector('#pickup-gate') !== null, 'home: gate photo element present')
     ok(d.querySelectorAll('.card').length >= 2, 'home: ' + d.querySelectorAll('.card').length + ' cards rendered')
     ok(d.querySelector('.chip-n') !== null, 'home: category chips show item counts')
 
@@ -122,7 +128,14 @@ async function runAll() {
     ok(/Ask About This Item/.test(text), 'detail: primary CTA present')
     ok(/Pickup hours:/.test(text), 'detail: pickup hours shown')
     ok(/google\.com\/maps/.test(d.body.innerHTML), 'detail: Open in Maps link present')
-    ok(d.querySelector('img[src="/media/warehouse-gate.jpg"]') !== null, 'detail: pickup gate photo shown')
+    ok(d.querySelector('#pickup-photo').hidden === true, 'detail: gate photo collapsed by default')
+    const detailGateBtn = d.querySelector('#gate-toggle')
+    ok(detailGateBtn !== null, 'detail: gate photo toggle present')
+    if (detailGateBtn) {
+      detailGateBtn.dispatchEvent(new dom.window.Event('click'))
+      ok(d.querySelector('#pickup-photo').hidden === false, 'detail: clicking toggle reveals gate photo')
+    }
+    ok(d.querySelector('img[src="/media/warehouse-gate.jpg"]') !== null, 'detail: gate photo element present')
     const askHref = (d.querySelector('.actions .btn-primary') || {}).href || ''
     ok(/sectional/i.test(decodeURIComponent(askHref)), 'detail: Messenger CTA prefilled with item name')
     dom.window.close()

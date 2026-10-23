@@ -65,16 +65,15 @@
 
   <section class="wrap" id="pickup" hidden>
     <div class="pickup-panel">
-      <div class="pickup-media" id="pickup-media">
+      <p class="eyebrow" style="margin:0 0 4px">Pickup &amp; delivery</p>
+      <h2 style="font-size:1.25rem">Visit our warehouse</h2>
+      <div class="pickup-actions" id="pickup-actions"></div>
+      <div class="pickup-rows" id="pickup-rows"></div>
+      <div class="pickup-photo" id="pickup-photo" hidden>
         <img id="pickup-gate" src="/media/warehouse-gate.jpg" alt="Pickup gate — the four white roll-up doors on the building" loading="lazy">
+        <p class="pickup-caption">Pickup gate — the four white roll-up doors, circled in red</p>
       </div>
-      <div class="pickup-info">
-        <p class="eyebrow" style="margin:0 0 6px">Pickup &amp; delivery</p>
-        <h2 style="font-size:1.3rem">Visit our warehouse</h2>
-        <div class="pickup-rows" id="pickup-rows"></div>
-        <p class="pickup-note" id="pickup-note"></p>
-        <div class="pickup-actions" id="pickup-actions"></div>
-      </div>
+      <p class="pickup-note" id="pickup-note"></p>
     </div>
   </section>
 </main>
@@ -119,18 +118,19 @@
   strip.innerHTML = points.join('<span class="dot-sep">·</span>')
 
   // Pickup block: same warehouse details as the item pages and the printed card.
+  // The gate photo stays collapsed — the address line is the affordance to open it.
   const pickupSection = document.getElementById('pickup')
   const rows = []
+  if (site.pickupHours) rows.push(`<div class="pickup-row hours">Pickup hours: ${App.esc(site.pickupHours)}</div>`)
   if (site.address) {
     const maps = App.mapsHref(site.address)
     rows.push(
-      `<div class="pickup-row"><strong>Pickup at:</strong> ${App.esc(site.address)}` +
+      `<div class="pickup-row addr"><strong>Pickup at:</strong> ${App.esc(site.address)}` +
         (maps ? ` — <a href="${App.esc(maps)}" target="_blank" rel="noopener">Open in Maps</a>` : '') +
-        '</div>',
+        ' <button class="gate-toggle" id="gate-toggle" type="button" aria-expanded="false" aria-controls="pickup-photo">See gate photo</button></div>',
     )
   }
   if (site.gateNote) rows.push(`<div class="pickup-row gate">${App.esc(site.gateNote)}</div>`)
-  if (site.pickupHours) rows.push(`<div class="pickup-row hours">Pickup hours: ${App.esc(site.pickupHours)}</div>`)
   document.getElementById('pickup-rows').innerHTML = rows.join('')
   if (site.pickupNote) document.getElementById('pickup-note').textContent = site.pickupNote
 
@@ -147,6 +147,18 @@
     )
   }
   document.getElementById('pickup-actions').innerHTML = actions.join('')
+
+  // Gate photo: collapsed until asked for.
+  const gateBtn = document.getElementById('gate-toggle')
+  if (gateBtn) {
+    gateBtn.addEventListener('click', () => {
+      const photo = document.getElementById('pickup-photo')
+      const open = photo.hidden
+      photo.hidden = !open
+      gateBtn.setAttribute('aria-expanded', String(open))
+      gateBtn.textContent = open ? 'Hide gate photo' : 'See gate photo'
+    })
+  }
 
   // Show the section only when there is something to say.
   if (rows.length || actions.length) pickupSection.hidden = false
