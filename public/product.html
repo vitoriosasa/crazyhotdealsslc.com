@@ -133,7 +133,7 @@
             ${site.gateNote ? `<p style="font-weight:600;color:var(--ink)">${App.esc(site.gateNote)}</p>` : ''}
             <button class="gate-toggle" id="gate-toggle" type="button" aria-expanded="false" aria-controls="pickup-photo">See gate photo</button>
             <div class="pickup-photo" id="pickup-photo" hidden>
-              <img src="/media/warehouse-gate.jpg" alt="Pickup gate — the four white roll-up doors on the building" loading="lazy" onerror="this.closest('.pickup-photo').style.display='none'">
+              <img src="/assets/warehouse-gate.jpg" alt="Pickup gate — the four white roll-up doors on the building" loading="lazy" onerror="this.closest('.pickup-photo').style.display='none'">
               <p class="pickup-caption">Pickup gate — the four white roll-up doors, circled in red</p>
             </div>
             <p>${App.esc(site.pickupNote || '')}</p>

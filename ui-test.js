@@ -135,7 +135,7 @@ async function runAll() {
       detailGateBtn.dispatchEvent(new dom.window.Event('click'))
       ok(d.querySelector('#pickup-photo').hidden === false, 'detail: clicking toggle reveals gate photo')
     }
-    ok(d.querySelector('img[src="/media/warehouse-gate.jpg"]') !== null, 'detail: gate photo element present')
+    ok(d.querySelector('img[src="/assets/warehouse-gate.jpg"]') !== null, 'detail: gate photo element present')
     const askHref = (d.querySelector('.actions .btn-primary') || {}).href || ''
     ok(/sectional/i.test(decodeURIComponent(askHref)), 'detail: Messenger CTA prefilled with item name')
     dom.window.close()

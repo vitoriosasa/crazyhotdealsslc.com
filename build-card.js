@@ -22,7 +22,7 @@ const FLAME_PATH =
   'M32 5 C43 19 45 26 45 34 A13 13 0 1 1 19 34 C19 26 21 19 32 5 Z ' +
   'M32 24 C36.5 30 38.5 33.5 38.5 36.5 A6.5 6.5 0 1 1 25.5 36.5 C25.5 33.5 27.5 30 32 24 Z'
 
-// The annotated pickup-gate photo, embedded so the file stays self-contained.
+// The pickup-gate photo, embedded so the file stays self-contained.
 const GATE_IMAGE = path.join(ROOT, 'data/uploads/warehouse-gate.jpg')
 const GATE_DATA_URI = fs.existsSync(GATE_IMAGE)
   ? 'data:image/jpeg;base64,' + fs.readFileSync(GATE_IMAGE).toString('base64')
