@@ -62,6 +62,21 @@
     <div class="grid" id="grid" aria-live="polite"></div>
     <noscript><p class="empty">Please enable JavaScript to view the catalogue.</p></noscript>
   </section>
+
+  <section class="wrap" id="pickup" hidden>
+    <div class="pickup-panel">
+      <div class="pickup-media" id="pickup-media">
+        <img id="pickup-gate" src="/media/warehouse-gate.jpg" alt="Pickup gate — the four white roll-up doors on the building" loading="lazy">
+      </div>
+      <div class="pickup-info">
+        <p class="eyebrow" style="margin:0 0 6px">Pickup &amp; delivery</p>
+        <h2 style="font-size:1.3rem">Visit our warehouse</h2>
+        <div class="pickup-rows" id="pickup-rows"></div>
+        <p class="pickup-note" id="pickup-note"></p>
+        <div class="pickup-actions" id="pickup-actions"></div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer id="site-footer"></footer>
@@ -102,6 +117,39 @@
   points.push('<span>Real photos of every piece</span>')
   points.push('<span>Delivery available for an extra fee</span>')
   strip.innerHTML = points.join('<span class="dot-sep">·</span>')
+
+  // Pickup block: same warehouse details as the item pages and the printed card.
+  const pickupSection = document.getElementById('pickup')
+  const rows = []
+  if (site.address) {
+    const maps = App.mapsHref(site.address)
+    rows.push(
+      `<div class="pickup-row"><strong>Pickup at:</strong> ${App.esc(site.address)}` +
+        (maps ? ` — <a href="${App.esc(maps)}" target="_blank" rel="noopener">Open in Maps</a>` : '') +
+        '</div>',
+    )
+  }
+  if (site.gateNote) rows.push(`<div class="pickup-row gate">${App.esc(site.gateNote)}</div>`)
+  if (site.pickupHours) rows.push(`<div class="pickup-row hours">Pickup hours: ${App.esc(site.pickupHours)}</div>`)
+  document.getElementById('pickup-rows').innerHTML = rows.join('')
+  if (site.pickupNote) document.getElementById('pickup-note').textContent = site.pickupNote
+
+  const actions = []
+  const msgHref = App.messengerHref(site, "Hi! I'd like to arrange a pickup.")
+  if (msgHref) {
+    actions.push(`<a class="btn btn-primary btn-sm" href="${App.esc(msgHref)}" target="_blank" rel="noopener">Message us</a>`)
+  } else if (site.facebookUrl) {
+    actions.push(`<a class="btn btn-primary btn-sm" href="${App.esc(site.facebookUrl)}" target="_blank" rel="noopener">Message us</a>`)
+  }
+  if (site.phone) {
+    actions.push(
+      `<a class="btn btn-ghost btn-sm" href="tel:${App.esc(site.phone.replace(/[^\d+]/g, ''))}">Call or text ${App.esc(site.phone)}</a>`,
+    )
+  }
+  document.getElementById('pickup-actions').innerHTML = actions.join('')
+
+  // Show the section only when there is something to say.
+  if (rows.length || actions.length) pickupSection.hidden = false
 
   const categories = []
   for (const c of site.categories || []) if (!categories.includes(c)) categories.push(c)

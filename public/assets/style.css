@@ -176,6 +176,37 @@ h3 { font-size: 1.06rem; }
 .trust-strip .stars { color: var(--accent); letter-spacing: 0.06em; font-weight: 700; }
 .trust-strip .dot-sep { color: var(--line-strong); }
 
+/* ---------- home: pickup panel ---------- */
+.pickup-panel {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 24px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin: 10px 0 44px;
+  box-shadow: var(--shadow-sm);
+}
+.pickup-media img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.pickup-rows { display: grid; gap: 8px; margin-top: 14px; font-size: 0.94rem; color: var(--ink-soft); line-height: 1.5; }
+.pickup-row a { color: var(--accent); font-weight: 700; text-decoration: underline; }
+.pickup-row.gate { color: var(--ink); font-weight: 600; }
+.pickup-row.hours { color: var(--muted); }
+.pickup-note { margin: 12px 0 0; font-size: 0.88rem; color: var(--muted); }
+.pickup-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+@media (max-width: 760px) {
+  .pickup-panel { grid-template-columns: 1fr; }
+}
+
 /* ---------- filters ---------- */
 .toolbar {
   display: flex;

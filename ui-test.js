@@ -56,6 +56,12 @@ async function runAll() {
     ok(d.querySelectorAll('.chip').length >= 4, 'home: category chips = ' + d.querySelectorAll('.chip').length)
     ok(/Local pickup/.test(d.querySelector('#trust-strip').textContent), 'home: trust strip mentions pickup')
     ok(!/4\.9/.test(d.querySelector('#trust-strip').textContent), 'home: rating line removed from trust strip')
+    ok(d.querySelector('#pickup').hidden === false, 'home: pickup panel shown')
+    ok(/46 Orange Street/.test(d.querySelector('#pickup-rows').textContent), 'home: warehouse address shown')
+    ok(/Pickup hours:/.test(d.querySelector('#pickup-rows').textContent), 'home: pickup hours shown')
+    ok(/four white roll-up doors/.test(d.querySelector('#pickup-rows').textContent), 'home: gate note shown')
+    ok(/google\.com\/maps/.test(d.querySelector('#pickup-rows').innerHTML), 'home: Open in Maps link shown')
+    ok(d.querySelector('#pickup-gate') !== null, 'home: warehouse gate photo present')
     ok(d.querySelectorAll('.card').length >= 2, 'home: ' + d.querySelectorAll('.card').length + ' cards rendered')
     ok(d.querySelector('.chip-n') !== null, 'home: category chips show item counts')
 
