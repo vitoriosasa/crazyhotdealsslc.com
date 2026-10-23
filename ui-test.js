@@ -116,6 +116,7 @@ async function runAll() {
     ok(/Ask About This Item/.test(text), 'detail: primary CTA present')
     ok(/Pickup hours:/.test(text), 'detail: pickup hours shown')
     ok(/google\.com\/maps/.test(d.body.innerHTML), 'detail: Open in Maps link present')
+    ok(d.querySelector('img[src="/media/warehouse-gate.jpg"]') !== null, 'detail: pickup gate photo shown')
     const askHref = (d.querySelector('.actions .btn-primary') || {}).href || ''
     ok(/sectional/i.test(decodeURIComponent(askHref)), 'detail: Messenger CTA prefilled with item name')
     dom.window.close()
