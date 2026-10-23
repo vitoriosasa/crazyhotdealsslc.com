@@ -121,6 +121,7 @@ button { font: inherit; }
 .warehouse .row a { color: var(--accent); font-weight: 700; text-decoration: underline; }
 .warehouse .tel { margin-top: 10px; font-size: 1.05rem; font-weight: 700; color: var(--accent); }
 @media print {
+  @page { size: 430px 1440px; margin: 0; }
   .cardpage { min-height: auto; padding: 0; background: #fff; }
   .bizcard { box-shadow: none; border-color: #ddd; max-width: 100%; page-break-inside: avoid; }
   .no-print { display: none !important; }
