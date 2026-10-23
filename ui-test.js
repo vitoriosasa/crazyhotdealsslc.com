@@ -50,6 +50,7 @@ async function runAll() {
     ok(d.querySelector('.brand-mark') !== null, 'home: brand mark rendered')
     ok(d.querySelector('.brand-name').textContent === 'Crazy Hot Deals', 'home: brand name = "Crazy Hot Deals"')
     ok(d.querySelector('.brand-sub').textContent === 'SLC', 'home: brand sub = "SLC"')
+    ok(d.querySelector('a[href="/card"]') === null, 'home: digital card link removed from site')
     ok(d.querySelector('#search') !== null, 'home: search box present')
     ok(d.querySelector('#sort') !== null, 'home: sort dropdown present')
     ok(d.querySelectorAll('.chip').length >= 4, 'home: category chips = ' + d.querySelectorAll('.chip').length)
@@ -119,26 +120,6 @@ async function runAll() {
     ok(/sectional/i.test(decodeURIComponent(askHref)), 'detail: Messenger CTA prefilled with item name')
     dom.window.close()
     listDom.window.close()
-  }
-
-  // ---------- card ----------
-  {
-    const dom = await load('/card')
-    const d = dom.window.document
-    ok(d.querySelector('.mark') !== null, 'card: flame mark rendered')
-    ok(d.querySelector('#brand').textContent === 'Crazy Hot Deals', 'card: brand head = "Crazy Hot Deals"')
-    ok(d.querySelector('#brand-sub').textContent === 'SLC', 'card: brand sub = "SLC"')
-    ok(/Sectional Couches/.test(d.querySelector('#cats').textContent), 'card: category line from site settings')
-    ok(/Home Furniture/.test(d.querySelector('#cats').textContent), 'card: Home Furniture category present')
-    const qrSrc = d.querySelector('#qr').getAttribute('src')
-    ok(/%2Fcard/.test(qrSrc), 'card: QR points at /card')
-    ok(/crazyhotdealsslc\.com/.test(d.querySelector('#qr-url').textContent), 'card: QR URL uses real domain')
-    ok(d.querySelector('#rating') === null, 'card: rating line removed')
-    ok(d.querySelectorAll('.card-points li').length === 3, 'card: 3 selling points from printed card')
-    ok(!/\d+ pieces? in stock/.test(d.querySelector('#stockline').textContent), 'card: no unit counts shown to buyers')
-    ok(/Pickup hours:/.test(d.querySelector('#card-hours').textContent), 'card: pickup hours shown')
-    ok(/google\.com\/maps/.test(d.querySelector('#card-addr').innerHTML), 'card: Open in Maps link present')
-    dom.window.close()
   }
 
   // ---------- listing generator ----------

@@ -21,9 +21,10 @@
 ## 1. Goal & scope
 
 **Unchanged**
-- Catalog home / item pages / digital card / Marketplace listing text / admin panel
+- Catalog home / item pages / Marketplace listing text / admin panel
 - Sales still happen on Facebook Marketplace + Messenger; the site only showcases and routes
 - Single admin; no payment / cart / buyer accounts
+- Business card is a standalone printable file (not a site page); its QR points at the home page
 
 **Added in this round**
 1. **Cloud data**: `data/*.json` on the Render persistent disk — survives crashes, restarts, and redeploys

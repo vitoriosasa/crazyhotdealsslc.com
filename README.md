@@ -18,10 +18,12 @@ Change port: `PORT=8080 npm start`
 
 1. Open `/admin` and set the admin password (one time only).
 2. Under "Site details", confirm **Public website address** is `https://crazyhotdealsslc.com`
-   — the card QR code and all share links use it; a wrong value means scanned links won't open.
+   — all share links use it; a wrong value means shared links won't open.
 3. Fill in Facebook / Messenger links and categories.
 4. "+ New item" — upload photos, set price / dimensions / condition / **what's included** / **what's NOT included** — saving publishes it.
-5. Share: `/p/<item-id>` (item page), `/card` (digital card with QR code).
+5. Share: `/p/<item-id>` (item page). The printed business card is a standalone file
+   (`Crazy Hot Deals SLC - Business Card.html` on the Desktop) with the QR baked in — it is
+   not part of the website.
 
 ## Pages
 
@@ -29,7 +31,6 @@ Change port: `PORT=8080 npm start`
 |---|---|
 | `/` | In-stock catalog: search, category filter, price sort, New badges |
 | `/p/<id>` | Item page: multi-image lightbox, quantity, specs, three contact buttons |
-| `/card` | Digital business card, printable directly (browser Ctrl+P) |
 | `/listing/<id>` | One-click Marketplace title / description / photo downloads |
 | `/admin` | Admin panel (password required) |
 | `/sitemap.xml` `/robots.txt` | For search engines |
@@ -45,7 +46,8 @@ Change port: `PORT=8080 npm start`
 
 ## Stock & log
 
-- Every item has a `quantity`. "3 in stock" tells buyers there are 3 pieces — visible to them.
+- Every item has a `quantity` for your own tracking. Buyers never see unit counts —
+  the site only shows "N available right now" style lines, never "3 in stock".
 - The **− / +** buttons in admin change quantity; every change is recorded in "Recent stock changes" with time, amount, and reason.
 - Quantity reaching 0 → automatically marked **Sold**; adding quantity back → automatically **Available** again.
 - Sold items stay visible on the site for **7 days**, then auto-hide, so old links never land on a blank page.

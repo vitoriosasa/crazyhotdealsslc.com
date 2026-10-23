@@ -108,7 +108,7 @@ const App = (() => {
   function renderHeader(site, active) {
     const host = document.getElementById('site-header')
     if (!host) return
-    const nav = [['/card', 'Card', 'card']]
+    const nav = []
     host.className = 'site-header'
     host.innerHTML = `
       <div class="wrap header-inner">
@@ -144,7 +144,6 @@ const App = (() => {
           ${site.facebookUrl ? `<a href="${esc(site.facebookUrl)}" target="_blank" rel="noopener">Facebook</a>` : ''}
           ${site.phone ? `<a href="tel:${esc(site.phone)}">${esc(site.phone)}</a>` : ''}
           ${site.email ? `<a href="mailto:${esc(site.email)}">${esc(site.email)}</a>` : ''}
-          <a href="/card">Digital card</a>
         </div>
       </div>
       <div class="wrap" style="margin-top:18px;font-size:.78rem;line-height:1.5">

@@ -5,7 +5,6 @@ const fs = require('node:fs')
 const fsp = require('node:fs/promises')
 const path = require('node:path')
 const crypto = require('node:crypto')
-const QRCode = require('qrcode')
 
 const PORT = Number(process.env.PORT || 3000)
 const ROOT = __dirname
@@ -410,18 +409,6 @@ async function handleApi(req, res, url) {
     if (!product) return json(res, 404, { error: 'Not found' })
     if (!isPublic(product) && !isAdmin(req)) return json(res, 404, { error: 'Not found' })
     return json(res, 200, { product })
-  }
-
-  if (pathname === '/api/qr' && method === 'GET') {
-    const text = url.searchParams.get('text') || ''
-    if (!text || text.length > 500) return json(res, 400, { error: 'Bad text' })
-    try {
-      const svg = await QRCode.toString(text, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' })
-      res.writeHead(200, { 'content-type': 'image/svg+xml', 'cache-control': 'public, max-age=600' })
-      return res.end(svg)
-    } catch {
-      return json(res, 400, { error: 'QR failed' })
-    }
   }
 
   // ---- admin session ----
@@ -889,7 +876,6 @@ async function serveSitemap(req, res) {
   const products = (await getProducts()).filter(isPublic)
   const urls = [
     { loc: `${base}/`, priority: '1.0' },
-    { loc: `${base}/card`, priority: '0.6' },
     ...products.map((p) => ({ loc: `${base}/p/${p.id}`, priority: p.status === 'sold' ? '0.2' : '0.8' })),
   ]
   const xml =
@@ -923,7 +909,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith('/api/')) return await handleApi(req, res, url)
     if (pathname.startsWith('/media/')) return await serveMedia(req, res, pathname)
 
-    if (pathname === '/card') return await serveStatic(req, res, '/card.html')
+    if (pathname === '/') return await serveStatic(req, res, '/index.html')
     if (pathname === '/admin') return await serveStatic(req, res, '/admin.html')
     if (pathname === '/sitemap.xml') return await serveSitemap(req, res)
     if (pathname === '/robots.txt') {

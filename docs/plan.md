@@ -57,13 +57,17 @@ Navigation logic: home → item page → Messenger; card → home → item page.
 - **Persistence**: `data/products.json` + `data/site.json` + `data/stock-log.json` + `data/uploads/` (on the Render persistent disk in production).
 - **Security baseline**: `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `robots.txt` blocks `/admin`, upload type whitelist, all output escaped via `App.esc`.
 
-### Digital card & QR code
+### Business card (standalone file)
 
-The `/card` QR code is generated live by the server, pointing at **"Public website address" from site settings + `/card`**.
-So once the domain is decided, change it in that one place — card page, share links, and sitemap all follow; no need to reprint the card image.
+The business card is **not part of the website** — it is a single self-contained HTML file
+(`Crazy Hot Deals SLC - Business Card.html`) with all CSS, the flame mark and a pre-rendered
+QR SVG inlined. It works offline (double-click to open), prints cleanly (Ctrl+P), and its QR
+code points at **`https://crazyhotdealsslc.com`** — the website home page, where buyers see
+the live catalog. The server no longer generates QR codes or serves a card page.
 
-> The printed card's QR code is printed separately and points at `https://crazyhotdealsslc.com`.
-> The old digital card overlaid the domain text on the QR code, which measurably hurt scan reliability — the new version moved the URL below the code.
+> To reprint with updated contact details: edit the values in `data/site.json`, run
+> `node build-card.js "output.html"` (the build script reads site.json and bakes in a fresh QR),
+> then print the new file.
 
 ---
 
