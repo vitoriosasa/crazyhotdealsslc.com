@@ -31,6 +31,14 @@ const App = (() => {
     available: { label: 'Available', cls: 'is-available' },
     pending: { label: 'Pending pickup', cls: 'is-pending' },
     sold: { label: 'Sold', cls: 'is-sold' },
+    draft: { label: 'Draft', cls: 'is-draft' },
+  }
+
+  // Google Maps deep link for the pickup address — opens the native app on phones.
+  function mapsHref(address) {
+    const q = String(address || '').trim()
+    if (!q) return ''
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q)
   }
 
   // The flame mark ("hot deals"), inlined so it needs no image request.
@@ -249,7 +257,7 @@ const App = (() => {
 
   return {
     api, money, esc, STATUS, FLAME_MARK, FLAME_MARK_LARGE, brandLockup, splitBrand,
-    messengerHref, productLink, askText,
+    messengerHref, productLink, askText, mapsHref,
     renderHeader, renderFooter, openLightbox, toast, copy,
     listingTitle, listingDescription, missingFields,
   }

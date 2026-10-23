@@ -53,6 +53,7 @@
         <a class="cc-tel" id="card-phone" href="#" rel="nofollow" hidden></a>
         <div class="cc-addr" id="card-addr" hidden></div>
         <div class="cc-gate" id="card-gate" hidden></div>
+        <div class="cc-hours" id="card-hours" hidden></div>
       </div>
       <div style="margin-top:10px" id="pickup-note">Local pickup is our primary option. Local delivery may be available for an additional fee. Pickup and delivery must be confirmed in advance.</div>
     </div>
@@ -112,10 +113,19 @@
   }
   const address = (site.address || '').trim()
   const addrEl = document.getElementById('card-addr')
-  if (address) { addrEl.textContent = 'Pickup at: ' + address; addrEl.hidden = false }
+  if (address) {
+    const maps = App.mapsHref(address)
+    addrEl.innerHTML = maps
+      ? 'Pickup at: ' + App.esc(address) + ' — <a href="' + App.esc(maps) + '" target="_blank" rel="noopener">Open in Maps</a>'
+      : 'Pickup at: ' + App.esc(address)
+    addrEl.hidden = false
+  }
   const gate = (site.gateNote || '').trim()
   const gateEl = document.getElementById('card-gate')
   if (gate) { gateEl.textContent = gate; gateEl.hidden = false }
+  const hours = (site.pickupHours || '').trim()
+  const hoursEl = document.getElementById('card-hours')
+  if (hours) { hoursEl.textContent = 'Pickup hours: ' + hours; hoursEl.hidden = false }
 
   document.getElementById('copy-card').addEventListener('click', () => App.copy(cardUrl, 'Card link copied'))
 

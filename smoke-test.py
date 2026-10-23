@@ -146,6 +146,102 @@ ok(s == 200, 'rename is case-insensitive on the from-name')
 # leave the site categories at their defaults so other tests see a sane state
 req('/api/admin/site', 'PUT', {'categories': ['Sectional Couches', 'Bed Frames', 'Home Furniture']})
 
+# ---------- pickup hours ----------
+s, b = req('/api/admin/site', 'PUT', {'pickupHours': 'Tue-Fri 9:00-17:00', 'messengerUrl': 'https://m.me/crazyhotdealsslc'})
+ok(s == 200, 'pickupHours save accepted')
+s, b = req('/api/site')
+ok(json.loads(b).get('pickupHours') == 'Tue-Fri 9:00-17:00', 'pickupHours exposed on public site payload')
+
+# ---------- drafts ----------
+s, b = req('/api/admin/products', 'POST', {
+    'title': 'Draft nightstand', 'code': 'DR-1',
+    'category': 'Home Furniture', 'price': 90, 'quantity': 1,
+    'status': 'draft',
+})
+did = json.loads(b)['product']['id']
+s, b = req('/api/products')
+ok(all(p['id'] != did for p in json.loads(b)['products']), 'draft item hidden from public list')
+
+s, b = req('/api/admin/products/%s' % did, 'PUT', {'status': 'available'})
+ok(s == 200, 'publish draft -> available')
+s, b = req('/api/products')
+ok(any(p['id'] == did for p in json.loads(b)['products']), 'published draft appears on public list')
+
+# a draft that drops to 0 units must NOT auto-flip to sold
+s, b = req('/api/admin/products/%s' % did, 'PUT', {'status': 'draft'})
+s, b = req('/api/admin/products/%s/stock' % did, 'POST', {'delta': -1})
+p = json.loads(b)['product']
+ok(p['status'] == 'draft' and p['quantity'] == 0, 'draft at 0 units stays draft (no auto-sold)')
+s, b = req('/api/admin/products/%s' % did, 'PUT', {'status': 'available', 'quantity': 2})
+ok(s == 200, 'draft re-published with stock restored')
+
+# ---------- stats dashboard ----------
+s, b = req('/api/admin/stats')
+st = json.loads(b)
+for key in ('drafts', 'listedThisMonth', 'soldThisMonth', 'avgDaysToSell', 'topCategory'):
+    ok(key in st, 'stats payload includes %s' % key)
+ok(st['drafts'] == 0, 'stats: no drafts left after publishing')
+
+# ---------- bulk operations ----------
+s, b = req('/api/admin/products', 'POST', {
+    'title': 'Bulk lamp', 'code': 'BL-1', 'category': 'Home Furniture',
+    'price': 40, 'quantity': 1,
+})
+bid = json.loads(b)['product']['id']
+s, b = req('/api/admin/products', 'POST', {
+    'title': 'Bulk chair', 'code': 'BL-2', 'category': 'Home Furniture',
+    'price': 60, 'quantity': 1,
+})
+bid2 = json.loads(b)['product']['id']
+
+s, b = req('/api/admin/products/bulk', 'POST', {'ids': [bid, bid2], 'action': 'category', 'category': 'TV Stand'})
+r = json.loads(b)
+ok(s == 200 and r.get('changed') == 2, 'bulk move re-tagged 2 items')
+s, b = req('/api/products')
+by_id = {p['id']: p for p in json.loads(b)['products']}
+ok(by_id[bid]['category'] == 'TV Stand' and by_id[bid2]['category'] == 'TV Stand', 'both items now in TV Stand')
+
+s, b = req('/api/admin/products/bulk', 'POST', {'ids': [bid, bid2], 'action': 'delist'})
+r = json.loads(b)
+ok(s == 200 and r.get('changed') == 0, 'bulk delist is a no-op for unlisted items')
+
+s, b = req('/api/admin/products/bulk', 'POST', {'ids': [bid, bid2], 'action': 'delete'})
+r = json.loads(b)
+ok(s == 200 and r.get('changed') == 2, 'bulk delete removed 2 items')
+s, b = req('/api/products')
+remaining = {p['id'] for p in json.loads(b)['products']}
+ok(bid not in remaining and bid2 not in remaining, 'deleted items gone from public list')
+
+s, b = req('/api/admin/products/bulk', 'POST', {'ids': [], 'action': 'delete'})
+ok(s == 400, 'bulk with no selection rejected')
+s, b = req('/api/admin/products/bulk', 'POST', {'ids': [pid], 'action': 'bogus'})
+ok(s == 400, 'bulk with unknown action rejected')
+
+# ---------- server snapshots ----------
+s, b = req('/api/admin/backups/snapshot', 'POST')
+ok(s == 200 and json.loads(b).get('file'), 'manual snapshot written')
+
+s, b = req('/api/admin/backups')
+snaps = json.loads(b)['snapshots']
+ok(s == 200 and len(snaps) >= 1 and 'file' in snaps[0], 'snapshot list returned')
+
+# delete an item, then restore the snapshot and confirm it comes back
+s, b = req('/api/admin/products/%s' % pid, 'DELETE')
+ok(s == 200, 'item deleted for restore test')
+s, b = req('/api/products')
+ok(all(p['id'] != pid for p in json.loads(b)['products']), 'deleted item off public list')
+
+s, b = req('/api/admin/backups/restore', 'POST', {'file': snaps[0]['file']})
+r = json.loads(b)
+ok(s == 200 and r.get('products', 0) >= 1, 'snapshot restore accepted')
+s, b = req('/api/products')
+ok(any(p['id'] == pid for p in json.loads(b)['products']), 'restored item is public again')
+
+s, b = req('/api/admin/backups/restore', 'POST', {'file': '../site.json'})
+ok(s == 400, 'path traversal in snapshot name rejected')
+s, b = req('/api/admin/backups/restore', 'POST', {'file': 'backup-nope.json'})
+ok(s == 404, 'unknown snapshot rejected')
+
 print('PID=%s XID=%s' % (pid, xid))
 print('FAILURES:', len(fails))
 sys.exit(1 if fails else 0)

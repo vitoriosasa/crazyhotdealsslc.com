@@ -113,6 +113,10 @@ async function runAll() {
     ok(d.querySelector('#copy-link') !== null, 'detail: copy link button present')
     ok(/Item code/.test(text), 'detail: item code row present')
     ok(/Ask About This Item/.test(text), 'detail: primary CTA present')
+    ok(/Pickup hours:/.test(text), 'detail: pickup hours shown')
+    ok(/google\.com\/maps/.test(d.body.innerHTML), 'detail: Open in Maps link present')
+    const askHref = (d.querySelector('.actions .btn-primary') || {}).href || ''
+    ok(/sectional/i.test(decodeURIComponent(askHref)), 'detail: Messenger CTA prefilled with item name')
     dom.window.close()
     listDom.window.close()
   }
@@ -132,6 +136,8 @@ async function runAll() {
     ok(d.querySelector('#rating') === null, 'card: rating line removed')
     ok(d.querySelectorAll('.card-points li').length === 3, 'card: 3 selling points from printed card')
     ok(!/\d+ pieces? in stock/.test(d.querySelector('#stockline').textContent), 'card: no unit counts shown to buyers')
+    ok(/Pickup hours:/.test(d.querySelector('#card-hours').textContent), 'card: pickup hours shown')
+    ok(/google\.com\/maps/.test(d.querySelector('#card-addr').innerHTML), 'card: Open in Maps link present')
     dom.window.close()
   }
 
@@ -173,16 +179,43 @@ async function runAll() {
     })
     const cookie = login.headers.get('set-cookie').split(';')[0]
 
-    const dom = await JSDOM.fromURL(BASE + '/admin', {
+    // fetch the page with the session, then build the DOM from the HTML so the
+    // admin scripts run fully logged-in (jsdom cannot attach cookies itself).
+    const html = await (await fetch(BASE + '/admin', { headers: { cookie } })).text()
+    const dom = new JSDOM(html, {
+      url: BASE + '/admin',
       runScripts: 'dangerously',
       resources: 'usable',
       pretendToBeVisual: true,
       virtualConsole: vc,
-      cookieJar: undefined,
+      beforeParse(window) {
+        window.fetch = (input, init) => {
+          const url = typeof input === 'string' ? new URL(input, BASE).toString() : input
+          const opts = init ? { ...init } : {}
+          opts.headers = { ...(opts.headers || {}), cookie }
+          return fetch(url, opts)
+        }
+        Object.defineProperty(window.navigator, 'clipboard', {
+          value: { writeText: async () => {} },
+          configurable: true,
+        })
+      },
     })
-    // inject the session cookie before scripts run is not possible here, so
-    // verify the gate renders and the API itself is reachable with the cookie.
-    ok(dom.window.document.querySelector('#gate') !== null, 'admin: gate element present')
+    await new Promise((r) => setTimeout(r, 1800))
+    const d = dom.window.document
+
+    ok(d.querySelector('#gate') !== null, 'admin: gate element present')
+    ok(d.querySelector('#bulk-bar') !== null, 'admin: bulk action bar present')
+    ok(d.querySelectorAll('.bulk-check').length >= 2, 'admin: every inventory row has a select checkbox')
+    ok(d.querySelector('#snapshot-list') !== null, 'admin: server snapshot list present')
+    ok(d.querySelector('#snapshot-now') !== null, 'admin: take-snapshot-now button present')
+    ok(d.querySelector('#s-hours') !== null, 'admin: pickup hours field present')
+    ok(d.querySelector('#s-hours').value.length > 0, 'admin: pickup hours prefilled from settings')
+    ok(d.querySelector('#save-draft') !== null, 'admin: save-as-draft button present')
+    ok(d.querySelectorAll('.stat-tile').length >= 9, 'admin: stats tiles + this-month row rendered')
+    ok(/This month/.test(d.body.textContent), 'admin: this-month dashboard section shown')
+    ok(/fastest category/i.test(d.body.textContent), 'admin: fastest-category tile shown')
+    ok(/snapshot/i.test(d.body.textContent), 'admin: snapshot section copy shown')
     ok((await fetch(BASE + '/api/admin/stats', { headers: { cookie } })).ok, 'admin: stats reachable with session')
     dom.window.close()
   }

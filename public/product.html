@@ -120,7 +120,16 @@
           <div class="notice">
             <strong>Pickup &amp; delivery</strong>
             ${site.phone ? `<p><a href="tel:${App.esc(site.phone.replace(/[^\d+]/g, ''))}">Call or text ${App.esc(site.phone)}</a></p>` : ''}
-            ${site.address ? `<p>Pickup at: ${App.esc(site.address)}</p>` : ''}
+            ${site.pickupHours ? `<p>Pickup hours: ${App.esc(site.pickupHours)}</p>` : ''}
+            ${
+              site.address
+                ? `<p>Pickup at: ${App.esc(site.address)}${
+                    App.mapsHref(site.address)
+                      ? ` — <a href="${App.esc(App.mapsHref(site.address))}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">Open in Maps</a>`
+                      : ''
+                  }</p>`
+                : ''
+            }
             ${site.gateNote ? `<p style="font-weight:600;color:var(--ink)">${App.esc(site.gateNote)}</p>` : ''}
             <p>${App.esc(site.pickupNote || '')}</p>
           </div>

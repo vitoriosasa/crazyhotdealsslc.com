@@ -14,6 +14,7 @@ const PUBLIC_DIR = path.join(ROOT, 'public')
 // persistent disk, e.g. DATA_DIR=/var/data — otherwise data lives in ./data.
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, 'data')
 const UPLOAD_DIR = path.join(DATA_DIR, 'uploads')
+const BACKUP_DIR = path.join(DATA_DIR, 'backups')
 const SITE_FILE = path.join(DATA_DIR, 'site.json')
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json')
 const LOG_FILE = path.join(DATA_DIR, 'stock-log.json')
@@ -52,6 +53,7 @@ const DEFAULT_SITE = {
     'Local pickup is our primary option. Local delivery may be available for an additional fee. Please message us with your ZIP code and any stairs or access details for a delivery quote. Pickup and delivery must be confirmed in advance.',
   address: '',
   gateNote: '',
+  pickupHours: 'Mon–Sat 10:00–18:00 · by appointment',
   categories: ['Sectional Couches', 'Bed Frames', 'Home Furniture'],
   admin: null,
 }
@@ -60,6 +62,7 @@ const DEFAULT_SITE = {
 
 async function ensureDirs() {
   await fsp.mkdir(UPLOAD_DIR, { recursive: true })
+  await fsp.mkdir(BACKUP_DIR, { recursive: true })
 }
 
 // On a fresh persistent disk (e.g. first Render deploy) DATA_DIR starts empty.
@@ -227,7 +230,7 @@ function pickField(input, existing, key, fallback) {
 }
 
 function normalizeProduct(input, existing = {}) {
-  const status = ['available', 'pending', 'sold'].includes(input.status) ? input.status : 'available'
+  const status = ['available', 'pending', 'sold', 'draft'].includes(input.status) ? input.status : 'available'
   const price = Number(input.price)
   const images = Array.isArray(input.images)
     ? input.images
@@ -280,8 +283,10 @@ async function addLog(entries) {
 }
 
 // Sold items stay listed for 7 days so buyers who bookmarked a link still see it.
+// Drafts are operator-only: they never reach the public site until published.
 function isPublic(product) {
   if (product.hidden) return false
+  if (product.status === 'draft') return false
   if (product.status !== 'sold') return true
   if (!product.soldAt) return true
   return Date.now() - Date.parse(product.soldAt) < SOLD_VISIBLE_DAYS * 86400000
@@ -334,6 +339,37 @@ async function serveMedia(req, res, pathname) {
   }
 }
 
+
+async function buildBackup() {
+  const site = await getSite()
+  return {
+    exportedAt: new Date().toISOString(),
+    version: 2,
+    // The admin password hash is deliberately left out of the export.
+    site: { ...site, admin: null },
+    products: await getProducts(),
+    log: await getLog(),
+  }
+}
+
+async function writeSnapshot() {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+  const file = path.join(BACKUP_DIR, `backup-${stamp}.json`)
+  await fsp.writeFile(file, JSON.stringify(await buildBackup(), null, 2), 'utf8')
+  // Keep the newest 30 snapshots, delete older ones.
+  const files = (await fsp.readdir(BACKUP_DIR)).filter((f) => f.endsWith('.json')).sort().reverse()
+  for (const old of files.slice(30)) {
+    fsp.unlink(path.join(BACKUP_DIR, old)).catch(() => {})
+  }
+  return file
+}
+
+function startAutoBackup() {
+  const run = () => writeSnapshot().catch((err) => console.error('[backup]', err.message))
+  run() // one snapshot on every boot, so a fresh deploy is captured
+  setInterval(run, 24 * 60 * 60 * 1000).unref()
+}
+
 async function handleApi(req, res, url) {
   const { pathname } = url
   const method = req.method || 'GET'
@@ -351,6 +387,7 @@ async function handleApi(req, res, url) {
       email: site.email,
       publicUrl: site.publicUrl,
       pickupNote: site.pickupNote,
+      pickupHours: site.pickupHours || '',
       address: site.address,
       gateNote: site.gateNote,
       categories: site.categories,
@@ -432,7 +469,7 @@ async function handleApi(req, res, url) {
   if (pathname === '/api/admin/site' && method === 'PUT') {
     const body = await readBody(req)
     const site = await getSite()
-    for (const key of ['brand', 'tagline', 'city', 'facebookUrl', 'messengerUrl', 'phone', 'email', 'publicUrl', 'pickupNote', 'address', 'gateNote']) {
+    for (const key of ['brand', 'tagline', 'city', 'facebookUrl', 'messengerUrl', 'phone', 'email', 'publicUrl', 'pickupNote', 'pickupHours', 'address', 'gateNote']) {
       if (typeof body[key] === 'string') site[key] = str(body[key], 1200)
     }
     if (Array.isArray(body.categories)) {
@@ -557,7 +594,7 @@ async function handleApi(req, res, url) {
     const reason = str(body.reason, 80) || (change < 0 ? 'sold / removed' : 'restock')
 
     const updated = { ...target, quantity: next, updatedAt: new Date().toISOString() }
-    if (next === 0 && updated.status !== 'sold') {
+    if (next === 0 && updated.status !== 'sold' && updated.status !== 'draft') {
       updated.status = 'sold'
       updated.soldAt = new Date().toISOString()
     } else if (next > 0 && updated.status === 'sold') {
@@ -569,6 +606,72 @@ async function handleApi(req, res, url) {
     await writeJson(PRODUCTS_FILE, products)
     await addLog([{ id: updated.id, title: updated.title, change, left: next, reason }])
     return json(res, 200, { product: updated })
+  }
+
+  // Bulk actions on several items at once — delete / mark removed from
+  // Marketplace / move to another category. One round trip, one log entry
+  // per affected item where it makes sense.
+  if (pathname === '/api/admin/products/bulk' && method === 'POST') {
+    const body = await readBody(req)
+    const ids = Array.isArray(body.ids)
+      ? body.ids.filter((id) => typeof id === 'string' && /^[\w-]+$/.test(id)).slice(0, 100)
+      : []
+    if (!ids.length) return json(res, 400, { error: 'No items selected' })
+    const action = str(body.action, 20)
+    if (!['delete', 'delist', 'category'].includes(action)) {
+      return json(res, 400, { error: 'Unknown action' })
+    }
+    let products = await getProducts()
+    const targets = products.filter((p) => ids.includes(p.id))
+    if (!targets.length) return json(res, 404, { error: 'Items not found' })
+    const now = new Date().toISOString()
+    let changed = 0
+
+    if (action === 'delete') {
+      const removedIds = new Set(targets.map((p) => p.id))
+      for (const p of targets) {
+        for (const img of p.images || []) {
+          for (const url of new Set([img.full, img.thumb])) {
+            if (!url) continue
+            fsp.unlink(path.join(UPLOAD_DIR, path.basename(url))).catch(() => {})
+          }
+        }
+      }
+      products = products.filter((p) => !removedIds.has(p.id))
+      changed = removedIds.size
+    } else if (action === 'delist') {
+      for (const p of targets) {
+        if (p.listedOnMarketplace && !p.delistedAt) {
+          p.delistedAt = now
+          p.updatedAt = now
+          changed++
+        }
+      }
+    } else if (action === 'category') {
+      const category = str(body.category, 60).trim()
+      if (!category) return json(res, 400, { error: 'Pick a category first' })
+      for (const p of targets) {
+        if (p.category !== category) {
+          p.category = category
+          p.updatedAt = now
+          changed++
+        }
+      }
+    }
+
+    await writeJson(PRODUCTS_FILE, products)
+    if (action === 'delete') {
+      await addLog(
+        targets.map((p) => ({
+          id: p.id,
+          title: p.title,
+          change: -p.quantity,
+          left: 0,
+          reason: 'bulk deleted',
+        })),
+      )
+    }
+    return json(res, 200, { ok: true, changed })
   }
 
   const adminProduct = pathname.match(/^\/api\/admin\/products\/([\w-]+)$/)
@@ -615,6 +718,7 @@ async function handleApi(req, res, url) {
     }
   }
 
+
   // ---- admin: log, stats, backup ----
 
   if (pathname === '/api/admin/log' && method === 'GET') {
@@ -623,27 +727,85 @@ async function handleApi(req, res, url) {
 
   if (pathname === '/api/admin/stats' && method === 'GET') {
     const products = await getProducts()
-    const live = products.filter((p) => p.status !== 'sold')
+    const live = products.filter((p) => p.status !== 'sold' && p.status !== 'draft')
+    const drafts = products.filter((p) => p.status === 'draft')
     const units = live.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0)
     const askingValue = live.reduce((sum, p) => sum + (Number(p.price) || 0) * (Number(p.quantity) || 0), 0)
-    const notPosted = products.filter((p) => p.status !== 'sold' && !p.listedOnMarketplace).length
+    const notPosted = live.filter((p) => !p.listedOnMarketplace).length
     const needsDelisting = products.filter((p) => p.status === 'sold' && p.listedOnMarketplace && !p.delistedAt).length
-    return json(res, 200, { listed: live.length, units, askingValue, notPosted, needsDelisting })
+
+    // Sales dashboard: this-month flow plus how fast pieces move.
+    const monthStart = new Date()
+    monthStart.setDate(1)
+    monthStart.setHours(0, 0, 0, 0)
+    const inThisMonth = (iso) => {
+      const t = Date.parse(iso)
+      return Number.isFinite(t) && t >= monthStart.getTime()
+    }
+    const listedThisMonth = products.filter((p) => inThisMonth(p.createdAt)).length
+    const soldThisMonth = products.filter((p) => p.status === 'sold' && inThisMonth(p.soldAt)).length
+    const turnarounds = products
+      .filter((p) => p.soldAt && p.createdAt)
+      .map((p) => (Date.parse(p.soldAt) - Date.parse(p.createdAt)) / 86400000)
+      .filter((d) => Number.isFinite(d) && d >= 0)
+    const avgDaysToSell = turnarounds.length
+      ? Math.round((turnarounds.reduce((a, b) => a + b, 0) / turnarounds.length) * 10) / 10
+      : null
+    // Which category moves fastest — sold count per category over the last 90 days.
+    const since90 = Date.now() - 90 * 86400000
+    const byCat = {}
+    for (const p of products) {
+      if (p.status !== 'sold' || !p.soldAt) continue
+      if (Date.parse(p.soldAt) < since90) continue
+      const c = p.category || 'Furniture'
+      byCat[c] = (byCat[c] || 0) + 1
+    }
+    const topCategory = Object.entries(byCat).sort((a, b) => b[1] - a[1])[0] || null
+
+    return json(res, 200, {
+      listed: live.length,
+      units,
+      askingValue,
+      notPosted,
+      needsDelisting,
+      drafts: drafts.length,
+      listedThisMonth,
+      soldThisMonth,
+      avgDaysToSell,
+      topCategory: topCategory ? { name: topCategory[0], sold: topCategory[1] } : null,
+    })
+  }
+
+  // ---------- backups: manual export/import + automatic daily snapshots ----------
+
+  function sanitizeSiteFromBackup(body) {
+    const merged = { ...body.site, admin: null }
+    for (const key of Object.keys(DEFAULT_SITE)) {
+      if (typeof merged[key] === 'string') merged[key] = str(merged[key], 1200)
+    }
+    if (Array.isArray(merged.categories)) {
+      merged.categories = merged.categories.map((c) => str(c, 60)).filter(Boolean).slice(0, 40)
+    }
+    return merged
+  }
+
+  // Shared by the manual restore and the snapshot restore. Keeps the current
+  // admin password; writes a safety snapshot first so a bad restore is undoable.
+  async function applyBackup(body) {
+    if (!body || !Array.isArray(body.products)) throw new Error('Not a valid backup file')
+    const current = await getSite()
+    if (body.site && typeof body.site === 'object') {
+      await writeJson(SITE_FILE, { ...sanitizeSiteFromBackup(body), admin: current.admin })
+    }
+    await writeJson(PRODUCTS_FILE, body.products.map((p) => normalizeProduct(p, p)))
+    if (Array.isArray(body.log)) await writeJson(LOG_FILE, body.log.slice(0, LOG_LIMIT))
   }
 
   if (pathname === '/api/admin/backup' && method === 'GET') {
-    const site = await getSite()
-    const backup = {
-      exportedAt: new Date().toISOString(),
-      version: 2,
-      // The admin password hash is deliberately left out of the export.
-      site: { ...site, admin: null },
-      products: await getProducts(),
-      log: await getLog(),
-    }
+    const backup = await buildBackup()
     res.writeHead(200, {
       'content-type': 'application/json; charset=utf-8',
-      'content-disposition': `attachment; filename="beehive-backup-${new Date().toISOString().slice(0, 10)}.json"`,
+      'content-disposition': `attachment; filename="crazyhotdealsslc-backup-${new Date().toISOString().slice(0, 10)}.json"`,
       'cache-control': 'no-store',
     })
     return res.end(JSON.stringify(backup, null, 2))
@@ -651,22 +813,67 @@ async function handleApi(req, res, url) {
 
   if (pathname === '/api/admin/backup' && method === 'POST') {
     const body = await readBody(req)
-    if (!body || !Array.isArray(body.products)) return json(res, 400, { error: 'Not a valid backup file' })
-
-    const current = await getSite()
-    if (body.site && typeof body.site === 'object') {
-      const merged = { ...body.site, admin: current.admin }
-      for (const key of Object.keys(DEFAULT_SITE)) {
-        if (typeof merged[key] === 'string') merged[key] = str(merged[key], 1200)
-      }
-      if (Array.isArray(merged.categories)) {
-        merged.categories = merged.categories.map((c) => str(c, 60)).filter(Boolean).slice(0, 40)
-      }
-      await writeJson(SITE_FILE, merged)
+    try {
+      await writeSnapshot() // safety copy of what is being replaced
+      await applyBackup(body)
+      return json(res, 200, { ok: true, products: (body.products || []).length })
+    } catch (err) {
+      return json(res, 400, { error: err.message })
     }
-    await writeJson(PRODUCTS_FILE, body.products.map((p) => normalizeProduct(p, p)))
-    if (Array.isArray(body.log)) await writeJson(LOG_FILE, body.log.slice(0, LOG_LIMIT))
-    return json(res, 200, { ok: true, products: body.products.length })
+  }
+
+  if (pathname === '/api/admin/backups' && method === 'GET') {
+    let entries = []
+    try {
+      const files = (await fsp.readdir(BACKUP_DIR)).filter((f) => f.endsWith('.json')).sort().reverse()
+      entries = await Promise.all(
+        files.slice(0, 30).map(async (f) => {
+          const full = path.join(BACKUP_DIR, f)
+          const [stat, raw] = await Promise.all([fsp.stat(full), fsp.readFile(full, 'utf8')])
+          let products = 0
+          try {
+            products = (JSON.parse(raw).products || []).length
+          } catch {
+            /* unreadable snapshot — still listed, restore will report */
+          }
+          return { file: f, at: stat.mtime.toISOString(), size: stat.size, products }
+        }),
+      )
+    } catch {
+      /* no snapshots yet */
+    }
+    return json(res, 200, { snapshots: entries })
+  }
+
+  if (pathname === '/api/admin/backups/snapshot' && method === 'POST') {
+    try {
+      const file = await writeSnapshot()
+      return json(res, 200, { ok: true, file: path.basename(file) })
+    } catch (err) {
+      return json(res, 500, { error: 'Could not write snapshot' })
+    }
+  }
+
+  if (pathname === '/api/admin/backups/restore' && method === 'POST') {
+    const body = await readBody(req)
+    const name = str(body.file, 120)
+    // Path safety: plain file name inside the backups folder, nothing else.
+    if (!/^backup-[\w.-]+\.json$/.test(name) || name.includes('..') || path.basename(name) !== name) {
+      return json(res, 400, { error: 'Bad snapshot name' })
+    }
+    let parsed
+    try {
+      parsed = JSON.parse(await fsp.readFile(path.join(BACKUP_DIR, name), 'utf8'))
+    } catch {
+      return json(res, 404, { error: 'Snapshot not found' })
+    }
+    try {
+      await writeSnapshot()
+      await applyBackup(parsed)
+      return json(res, 200, { ok: true, products: (parsed.products || []).length })
+    } catch (err) {
+      return json(res, 400, { error: err.message })
+    }
   }
 
   return json(res, 404, { error: 'Unknown endpoint' })
@@ -745,6 +952,7 @@ async function main() {
   await loadSecret()
   if (!fs.existsSync(PRODUCTS_FILE)) await writeJson(PRODUCTS_FILE, [])
   if (!fs.existsSync(LOG_FILE)) await writeJson(LOG_FILE, [])
+  startAutoBackup()
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`Crazy Hot Deals SLC showroom running on http://localhost:${PORT}`)
     console.log(`Admin panel: http://localhost:${PORT}/admin`)

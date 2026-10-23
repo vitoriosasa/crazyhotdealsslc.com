@@ -644,6 +644,8 @@ h3 { font-size: 1.06rem; }
 .card-contact .cc-tel { color: var(--accent); font-weight: 700; letter-spacing: 0.02em; text-decoration: none; }
 .card-contact .cc-addr { color: var(--ink-soft); }
 .card-contact .cc-gate { color: var(--ink); font-weight: 600; }
+.card-contact .cc-hours { color: var(--muted); }
+.card-contact .cc-hours a, .card-contact .cc-addr a { color: var(--accent); font-weight: 600; }
 
 /* ---------- admin ---------- */
 .admin-shell { max-width: 1080px; margin: 0 auto; padding: 26px 20px 80px; }
@@ -778,7 +780,7 @@ textarea { min-height: 96px; resize: vertical; }
 .admin-list { display: grid; gap: 10px; }
 .admin-item {
   display: grid;
-  grid-template-columns: 84px 1fr auto;
+  grid-template-columns: auto 84px 1fr auto;
   gap: 14px;
   align-items: center;
   padding: 10px;
@@ -792,10 +794,42 @@ textarea { min-height: 96px; resize: vertical; }
 .admin-item .m .posted { color: var(--ok); font-weight: 600; }
 .admin-item .m .notposted { color: var(--warn); font-weight: 600; }
 @media (max-width: 640px) {
-  .admin-item { grid-template-columns: 64px 1fr; }
+  .admin-item { grid-template-columns: auto 64px 1fr; }
   .admin-item img { width: 64px; height: 56px; }
   .admin-item .row-actions { grid-column: 1 / -1; }
 }
+
+/* ---------- admin: bulk operations ---------- */
+.bulk-check { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+.bulk-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; margin-bottom: 12px;
+  border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+.bulk-bar .spacer { flex: 1; }
+.bulk-all { display: inline-flex; align-items: center; gap: 7px; font-size: 0.82rem; color: var(--ink-soft); cursor: pointer; }
+.bulk-all input { accent-color: var(--accent); }
+
+/* ---------- admin: drafts & soft stat tiles ---------- */
+.draft-tag {
+  display: inline-block; padding: 1px 8px; margin-left: 6px;
+  border-radius: 999px; background: var(--warn-soft); color: var(--warn);
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  vertical-align: 1px;
+}
+.stat-tile.is-soft { background: var(--surface); }
+.stat-tile.is-soft .n { font-size: 1.2rem; }
+.badge.is-draft { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+
+/* ---------- admin: server snapshots ---------- */
+.snap-row {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  padding: 9px 0; border-top: 1px solid rgba(154, 106, 28, 0.2); font-size: 0.87rem;
+}
+.snap-row:first-of-type { border-top: 0; }
+.snap-row .t { font-weight: 600; color: var(--ink); }
+.snap-row .m { flex: 1; color: var(--muted); font-size: 0.78rem; }
 
 .uploader { display: grid; gap: 10px; }
 .dropzone {

@@ -52,6 +52,16 @@
       </div>
     </div>
 
+    <div id="bulk-bar" class="bulk-bar hidden">
+      <label class="bulk-all"><input type="checkbox" id="bulk-all"> Select all</label>
+      <span class="small muted" id="bulk-count"></span>
+      <span class="spacer"></span>
+      <select id="bulk-category" style="width:auto;padding:5px 8px;font-size:.78rem" aria-label="Category"></select>
+      <button class="btn btn-sm btn-light" id="bulk-move" type="button">Move to category</button>
+      <button class="btn btn-sm btn-light" id="bulk-delist" type="button">Mark removed from Marketplace</button>
+      <button class="btn btn-sm btn-light" id="bulk-delete" type="button" style="color:#8a2b1f">Delete</button>
+    </div>
+
     <div id="editor" class="hidden">
       <form id="item-form">
         <input type="hidden" id="f-id">
@@ -85,6 +95,7 @@
             <select id="f-status">
               <option value="available">Available</option>
               <option value="pending">Pending pickup</option>
+              <option value="draft">Draft — only visible here</option>
               <option value="sold">Sold</option>
             </select>
           </div>
@@ -156,6 +167,7 @@
 
         <div class="row-actions" style="margin-top:16px">
           <button class="btn btn-primary" type="submit" id="save-item">Save item</button>
+          <button class="btn btn-light" type="button" id="save-draft">Save as draft</button>
           <button class="btn btn-light" type="button" id="cancel-item">Cancel</button>
           <a class="btn btn-ghost hidden" id="listing-link" href="#" target="_blank" rel="noopener">Listing text →</a>
           <button class="btn btn-ghost hidden" type="button" id="delete-item" style="color:#8a2b1f">Delete item</button>
@@ -176,13 +188,19 @@
     <div class="panel-head"><h2>Backup</h2></div>
     <p class="small muted" style="margin:0 0 12px">
       Everything lives in the <code>data/</code> folder — copying that folder is a full backup.
-      This button does the same thing as a single file you can keep off the computer.
+      A snapshot is taken automatically every day (the newest 30 are kept), and again before every restore,
+      so a mistake can always be rolled back.
     </p>
     <div class="row-actions">
       <a class="btn btn-light" id="backup-export" href="/api/admin/backup" download>Download backup (JSON)</a>
+      <button class="btn btn-light" id="snapshot-now" type="button">Take a snapshot now</button>
     </div>
     <div class="field" style="margin-top:16px">
-      <label for="backup-file">Restore from a backup file</label>
+      <label>Automatic snapshots on the server</label>
+      <div id="snapshot-list"><p class="small muted" style="margin:0">Loading…</p></div>
+    </div>
+    <div class="field" style="margin-top:16px">
+      <label for="backup-file">Restore from a backup file on this computer</label>
       <input id="backup-file" type="file" accept=".json,application/json">
       <span class="small muted" style="display:block;margin-top:6px">
         This replaces the current catalogue. The admin password is not affected.
@@ -246,6 +264,10 @@
       <div class="field">
         <label for="s-gate">Pickup gate note — how buyers find the door (optional)</label>
         <input id="s-gate" type="text" placeholder="Pickup gate: the four white roll-up doors on the building">
+      </div>
+      <div class="field">
+        <label for="s-hours">Pickup hours (shown on the card &amp; item pages)</label>
+        <input id="s-hours" type="text" placeholder="Mon–Sat 10am–6pm, by appointment">
       </div>
       <div class="field">
         <label>Categories — the filter boards on your home page</label>
@@ -371,6 +393,7 @@
     renderDelist()
     renderList()
     renderLog()
+    renderSnapshots()
   }
 
   function renderStats(stats) {
@@ -379,10 +402,26 @@
       [stats.units ?? 0, 'units in stock'],
       [App.money(stats.askingValue || 0), 'asking value'],
       [stats.notPosted ?? 0, 'not on Marketplace'],
+      [stats.drafts ?? 0, 'drafts'],
     ]
-    $('stats').innerHTML = tiles
-      .map(([n, l]) => `<div class="stat-tile"><span class="n">${App.esc(String(n))}</span><span class="l">${App.esc(l)}</span></div>`)
-      .join('')
+    const month = [
+      [stats.listedThisMonth ?? 0, 'listed this month'],
+      [stats.soldThisMonth ?? 0, 'sold this month'],
+      [stats.avgDaysToSell == null ? '—' : stats.avgDaysToSell + ' days', 'avg. time to sell'],
+      [stats.topCategory ? `${App.esc(stats.topCategory.name)} · ${stats.topCategory.sold}` : '—', 'fastest category (90d)'],
+    ]
+    $('stats').innerHTML =
+      `<div class="stat-grid">` +
+      tiles
+        .map(([n, l]) => `<div class="stat-tile"><span class="n">${App.esc(String(n))}</span><span class="l">${App.esc(l)}</span></div>`)
+        .join('') +
+      `</div>
+      <div class="panel-head" style="margin-top:18px"><h2 style="font-size:1rem">This month</h2></div>
+      <div class="stat-grid">` +
+      month
+        .map(([n, l]) => `<div class="stat-tile is-soft"><span class="n">${App.esc(String(n))}</span><span class="l">${App.esc(l)}</span></div>`)
+        .join('') +
+      `</div>`
   }
 
   // Sold items left up on Marketplace are the #1 source of "is this still available?"
@@ -447,6 +486,7 @@
     $('s-pickup').value = site.pickupNote || ''
     $('s-address').value = site.address || ''
     $('s-gate').value = site.gateNote || ''
+    $('s-hours').value = site.pickupHours || ''
     renderCatRows()
   }
 
@@ -605,13 +645,16 @@
         const cover = p.images && p.images[0] ? p.images[0].thumb || p.images[0].full : ''
         const qty = Number(p.quantity)
         const missing = App.missingFields(p)
+        const isDraft = p.status === 'draft'
         const mpLabel = p.listedOnMarketplace
           ? '<span class="posted">On Marketplace</span>'
           : '<span class="notposted">Not posted yet</span>'
+        const statusOptions = isDraft ? ['draft', 'available', 'pending', 'sold'] : ['available', 'pending', 'sold']
         return `<div class="admin-item" data-id="${App.esc(p.id)}">
+          <input type="checkbox" class="bulk-check" data-id="${App.esc(p.id)}" aria-label="Select ${App.esc(p.title)}">
           ${cover ? `<img src="${App.esc(cover)}" alt="">` : `<img alt="" style="background:#eee">`}
           <div>
-            <div class="t">${App.esc(p.title)}${p.hidden ? ' <span class="small muted">(hidden)</span>' : ''}</div>
+            <div class="t">${App.esc(p.title)}${p.hidden ? ' <span class="small muted">(hidden)</span>' : ''}${isDraft ? ' <span class="draft-tag">Draft</span>' : ''}</div>
             <div class="m">${App.esc(p.category)} · ${App.money(p.price)}${p.code ? ' · #' + App.esc(p.code) : ''} · ${(p.images || []).length} photo${(p.images || []).length === 1 ? '' : 's'} · ${mpLabel}</div>
             ${
               missing.length && p.status !== 'sold'
@@ -625,10 +668,11 @@
                 <button type="button" data-role="inc" aria-label="Increase stock">+</button>
               </span>
               <select data-role="status" style="width:auto;padding:5px 8px;font-size:.78rem" aria-label="Status">
-                ${['available', 'pending', 'sold']
+                ${statusOptions
                   .map((s) => `<option value="${s}"${p.status === s ? ' selected' : ''}>${App.STATUS[s].label}</option>`)
                   .join('')}
               </select>
+              ${isDraft ? '<button class="btn btn-sm btn-primary" data-role="publish" type="button">Publish</button>' : ''}
               <button class="btn btn-sm btn-light" data-role="edit" type="button">Edit</button>
               <a class="btn btn-sm btn-ghost" href="/listing/${encodeURIComponent(p.id)}" target="_blank" rel="noopener">Listing text</a>
               <a class="btn btn-sm btn-ghost" href="/p/${encodeURIComponent(p.id)}" target="_blank" rel="noopener">View</a>
@@ -639,6 +683,7 @@
         </div>`
       })
       .join('')
+    syncBulkBar()
   }
 
   $('delist-panel').addEventListener('click', async (e) => {
@@ -669,6 +714,11 @@
       await saveProduct(id, { hidden: !product.hidden })
       return
     }
+    if (btn.dataset.role === 'publish') {
+      await saveProduct(id, { status: 'available' })
+      App.toast(`“${product.title}” is now live`)
+      return
+    }
     if (btn.dataset.role === 'inc' || btn.dataset.role === 'dec') {
       const delta = btn.dataset.role === 'inc' ? 1 : -1
       btn.disabled = true
@@ -687,10 +737,76 @@
   })
 
   $('list').addEventListener('change', async (e) => {
+    const box = e.target.closest('.bulk-check')
+    if (box) {
+      if (box.checked) selected.add(box.dataset.id)
+      else selected.delete(box.dataset.id)
+      syncBulkBar()
+      return
+    }
     const sel = e.target.closest('select[data-role="status"]')
     if (!sel) return
     const id = sel.closest('.admin-item').dataset.id
     await saveProduct(id, { status: sel.value })
+  })
+
+  // ---------- bulk operations ----------
+  // Tick several items, then delete / mark removed from Marketplace / move
+  // them to another category in one round trip.
+  const selected = new Set()
+
+  function syncBulkBar() {
+    const total = products.length
+    const n = selected.size
+    $('bulk-bar').classList.toggle('hidden', n === 0)
+    $('bulk-count').textContent = n ? `${n} of ${total} selected` : ''
+    $('bulk-all').checked = n > 0 && n === total
+    const cats = site.categories || []
+    $('bulk-category').innerHTML = cats.length
+      ? cats.map((c) => `<option value="${App.esc(c)}">${App.esc(c)}</option>`).join('')
+      : '<option value="">No categories yet</option>'
+  }
+
+  $('bulk-all').addEventListener('change', (e) => {
+    if (e.target.checked) products.forEach((p) => selected.add(p.id))
+    else selected.clear()
+    document.querySelectorAll('.bulk-check').forEach((c) => {
+      c.checked = e.target.checked
+    })
+    syncBulkBar()
+  })
+
+  async function runBulk(action, extra, doneMessage) {
+    const ids = [...selected]
+    if (!ids.length) return
+    try {
+      await App.api('/api/admin/products/bulk', {
+        method: 'POST',
+        body: JSON.stringify({ ids, action, ...extra }),
+      })
+      selected.clear()
+      await loadAll()
+      App.toast(doneMessage)
+    } catch (err) {
+      App.toast(err.message, true)
+    }
+  }
+
+  $('bulk-delete').addEventListener('click', () => {
+    const n = selected.size
+    if (!n) return
+    if (!confirm(`Delete ${n} item${n === 1 ? '' : 's'} and their photos? This cannot be undone.`)) return
+    runBulk('delete', {}, `${n} item${n === 1 ? '' : 's'} deleted`)
+  })
+  $('bulk-delist').addEventListener('click', () => {
+    if (!selected.size) return
+    runBulk('delist', {}, 'Marked as removed from Marketplace')
+  })
+  $('bulk-move').addEventListener('click', () => {
+    if (!selected.size) return
+    const category = $('bulk-category').value
+    if (!category) { App.toast('Add a category first', true); return }
+    runBulk('category', { category }, `Moved to “${category}”`)
   })
 
   async function saveProduct(id, patch) {
@@ -770,6 +886,12 @@
 
   $('new-item').addEventListener('click', () => openEditor(null))
   $('cancel-item').addEventListener('click', closeEditor)
+
+  // Draft = saved but not public yet — nothing reaches the buyers until published.
+  $('save-draft').addEventListener('click', () => {
+    $('f-status').value = 'draft'
+    $('item-form').requestSubmit()
+  })
 
   function renderImages() {
     $('img-grid').innerHTML = draftImages
@@ -890,7 +1012,8 @@
       else await App.api('/api/admin/products', { method: 'POST', body: JSON.stringify(payload) })
       closeEditor()
       await loadAll()
-      App.toast(id ? 'Item updated' : 'Item published')
+      const savedAsDraft = $('f-status').value === 'draft'
+      App.toast(id ? 'Item updated' : savedAsDraft ? 'Draft saved — not public yet' : 'Item published')
     } catch (err) {
       App.toast(err.message, true)
     } finally {
@@ -928,6 +1051,7 @@
       phone: $('s-phone').value,
       email: $('s-email').value,
       pickupNote: $('s-pickup').value,
+      pickupHours: $('s-hours').value,
       address: $('s-address').value,
       gateNote: $('s-gate').value,
     }
@@ -981,6 +1105,60 @@
   })
 
   // ---------- backup restore ----------
+  async function renderSnapshots() {
+    const host = $('snapshot-list')
+    let snapshots = []
+    try {
+      const r = await App.api('/api/admin/backups')
+      snapshots = r.snapshots || []
+    } catch {
+      host.innerHTML = '<p class="small muted" style="margin:0">Could not load snapshots.</p>'
+      return
+    }
+    if (!snapshots.length) {
+      host.innerHTML = '<p class="small muted" style="margin:0">No snapshots yet — one is taken on every start and every day.</p>'
+      return
+    }
+    host.innerHTML = snapshots
+      .map((s) => {
+        const when = new Date(s.at)
+        const time = Number.isFinite(when.getTime())
+          ? when.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : s.file
+        const kb = s.size ? `${Math.round(s.size / 1024)} KB` : ''
+        return `<div class="snap-row">
+          <span class="t">${App.esc(time)}</span>
+          <span class="m">${s.products} item${s.products === 1 ? '' : 's'} · ${App.esc(kb)}</span>
+          <button class="btn btn-sm btn-light" data-snap="${App.esc(s.file)}" type="button">Restore</button>
+        </div>`
+      })
+      .join('')
+  }
+
+  $('snapshot-list').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-snap]')
+    if (!btn) return
+    const file = btn.dataset.snap
+    if (!confirm(`Restore the snapshot from ${file}?\n\nThis replaces the current catalogue. A snapshot of the current state is taken first.`)) return
+    try {
+      await App.api('/api/admin/backups/restore', { method: 'POST', body: JSON.stringify({ file }) })
+      await loadAll()
+      App.toast('Snapshot restored')
+    } catch (err) {
+      App.toast(err.message, true)
+    }
+  })
+
+  $('snapshot-now').addEventListener('click', async () => {
+    try {
+      await App.api('/api/admin/backups/snapshot', { method: 'POST' }).catch(() => {})
+      App.toast('Snapshot saved')
+      await renderSnapshots()
+    } catch (err) {
+      App.toast(err.message, true)
+    }
+  })
+
   $('backup-file').addEventListener('change', async (e) => {
     const file = e.target.files && e.target.files[0]
     if (!file) return
